@@ -1,0 +1,138 @@
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  finance-migrate:
+    build:
+      context: ./services/finance-service
+    command: ["alembic", "upgrade", "head"]
+    environment:
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  finance-service:
+    build:
+      context: ./services/finance-service
+    restart: unless-stopped
+    init: true
+    environment:
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    depends_on:
+      finance-migrate:
+        condition: service_completed_successfully
+    ports:
+      - "${FINANCE_PORT}:8001"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  analytics-service:
+    build:
+      context: ./services/analytics-service
+    restart: unless-stopped
+    init: true
+    environment:
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      BOT_TOKEN: ${BOT_TOKEN}
+      FINANCE_URL: ${FINANCE_URL}
+    depends_on:
+      finance-service:
+        condition: service_healthy
+    ports:
+      - "${ANALYTICS_PORT}:8002"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8002/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+    restart: unless-stopped
+    init: true
+    environment:
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      FINANCE_URL: ${FINANCE_URL}
+      ANALYTICS_URL: ${ANALYTICS_URL}
+      MINIAPP_SIGNING_SECRET: ${MINIAPP_SIGNING_SECRET}
+    depends_on:
+      finance-service:
+        condition: service_healthy
+      analytics-service:
+        condition: service_healthy
+    ports:
+      - "${GATEWAY_PORT}:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  bot-service:
+    build:
+      context: ./services/bot-service
+    restart: unless-stopped
+    init: true
+    environment:
+      BOT_TOKEN: ${BOT_TOKEN}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      GATEWAY_URL: ${GATEWAY_URL}
+      MINIAPP_PUBLIC_URL: ${MINIAPP_PUBLIC_URL}
+      MINIAPP_SIGNING_SECRET: ${MINIAPP_SIGNING_SECRET}
+      UPLOAD_DIR: ${UPLOAD_DIR}
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    volumes:
+      - uploads_data:${UPLOAD_DIR}
+
+  demo-seed:
+    image: python:3.11-slim
+    working_dir: /seed
+    command: ["python", "seed_demo.py"]
+    environment:
+      GATEWAY_URL: ${GATEWAY_URL}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      DEMO_TELEGRAM_ID: ${DEMO_TELEGRAM_ID}
+      DEMO_TELEGRAM_USERNAME: ${DEMO_TELEGRAM_USERNAME}
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    profiles: ["demo"]
+    volumes:
+      - ./scripts:/seed:ro
+    restart: "no"
+
+volumes:
+  db_data:
+  uploads_data:

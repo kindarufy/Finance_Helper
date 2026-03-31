@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang='ru'>
+<head>
+  <meta charset='utf-8' />
+  <meta name='viewport' content='width=device-width,initial-scale=1' />
+  <title>Finance Helper Mini App</title>
+  <script src='https://telegram.org/js/telegram-web-app.js'></script>
+  <style>
+    :root { --bg:#020617; --card:#111827; --muted:#94a3b8; --text:#f8fafc; --accent:#38bdf8; --border:rgba(148,163,184,.18); }
+    *{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,sans-serif;background:linear-gradient(180deg,#0f172a 0%,#020617 100%);color:var(--text)}
+    .wrap{max-width:1040px;margin:0 auto;padding:16px}.hero,.card{background:rgba(17,24,39,.88);border:1px solid var(--border);border-radius:18px;box-shadow:0 8px 32px rgba(2,6,23,.35)}
+    .hero{display:grid;gap:12px;padding:18px;margin-bottom:16px}.sub,.muted{color:var(--muted)} .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    select,button{border-radius:12px;border:1px solid var(--border);background:#0b1220;color:var(--text);padding:10px 12px;font:inherit} button.primary{background:var(--accent);color:#00131d;font-weight:600;border-color:transparent}
+    .grid{display:grid;gap:12px}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.triple{grid-template-columns:repeat(3,minmax(0,1fr))}.card{padding:16px}.stat-label{color:var(--muted);font-size:.88rem;margin-bottom:6px}.stat-value{font-size:1.4rem;font-weight:700}
+    .tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin:16px 0 12px}.tab{white-space:nowrap;cursor:pointer}.tab.active{background:var(--accent);color:#00131d;font-weight:700;border-color:transparent}.panel{display:none}.panel.active{display:block}
+    .list{display:grid;gap:8px}.row{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px 12px;border-radius:14px;background:rgba(148,163,184,.06)}
+    .progress,.bar{height:10px;border-radius:999px;background:rgba(148,163,184,.14);overflow:hidden;margin-top:8px}.progress>span,.bar>span{display:block;height:100%;background:linear-gradient(90deg,#38bdf8,#22c55e)}
+    .metrics-stack{display:grid;gap:12px}
+    svg{width:100%;height:230px;display:block}.empty{color:var(--muted);padding:12px 0}.badge{display:inline-block;padding:4px 10px;border-radius:999px;background:rgba(56,189,248,.16);color:#7dd3fc;font-size:.82rem}
+    @media (max-width:700px){.cards,.triple{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<div class='wrap'>
+  <section class='hero'>
+    <div><h1 style='margin:0;font-size:1.35rem'>Finance Helper Mini App</h1><div class='sub'>Дашборд бюджета, AI-инсайты, участники и лимиты прямо в Telegram.</div></div>
+    <div class='toolbar'><select id='workspaceSelect'></select><button class='primary' id='refreshBtn'>Обновить</button></div>
+    <div class='sub' id='activeWorkspace'></div>
+  </section>
+  <div class="metrics-stack">
+    <section class='grid cards' id='summaryCards'></section>
+    <section class='grid triple' id='extraCards'></section>
+  </div>
+  <div class='tabs'>
+    <button class='tab active' data-tab='categories'>Категории</button>
+    <button class='tab' data-tab='dynamics'>Динамика</button>
+    <button class='tab' data-tab='participants'>Участники</button>
+    <button class='tab' data-tab='limits'>Лимиты</button>
+    <button class='tab' data-tab='ai'>AI-анализ</button>
+    <button class='tab' data-tab='recent'>Операции</button>
+  </div>
+  <section class='panel active card' id='panel-categories'><div id='categoriesList' class='list'></div></section>
+  <section class='panel card' id='panel-dynamics'><svg id='timelineChart' viewBox='0 0 1000 220' preserveAspectRatio='none'></svg></section>
+  <section class='panel card' id='panel-participants'><div id='participantsList' class='list'></div><div id='membersMeta' class='list' style='margin-top:12px'></div></section>
+  <section class='panel card' id='panel-limits'><div id='limitsList' class='list'></div></section>
+  <section class='panel card' id='panel-ai'><div id='aiInsights' class='list'></div></section>
+  <section class='panel card' id='panel-recent'><div id='recentList' class='list'></div></section>
+</div>
+<script>
+const params=new URLSearchParams(location.search); const token=params.get('token')||''; const tg=window.Telegram&&Telegram.WebApp?Telegram.WebApp:null; if(tg){tg.ready();tg.expand();}
+async function getJSON(path){const res=await fetch(path+(path.includes('?')?'&':'?')+'token='+encodeURIComponent(token)); if(!res.ok) throw new Error(await res.text()); return await res.json();}
+async function postJSON(path,body){const res=await fetch(path+'?token='+encodeURIComponent(token),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})}); if(!res.ok) throw new Error(await res.text()); return await res.json();}
+function money(v,c='RUB'){const num=Number(v||0); return new Intl.NumberFormat('ru-RU',{maximumFractionDigits:2}).format(num)+' '+c;}
+function fillSimpleList(elId,items,render,empty='Пока пусто'){ const el=document.getElementById(elId); if(!items||!items.length){el.innerHTML=`<div class="empty">${empty}</div>`; return;} el.innerHTML=items.map(render).join(''); }
+function row(left,right,extra=''){ return `<div class="row"><div>${left}${extra}</div><div>${right}</div></div>`; }
+function setCards(summary,monthly){ const cur=monthly.base_currency||'RUB'; const cards=[['Расходы',money(summary.expense_total,cur)],['Доходы',money(summary.income_total,cur)],['Баланс',money(summary.balance,cur)],['Средний расход в день',money(monthly.avg_daily_expense||0,cur)]]; document.getElementById('summaryCards').innerHTML=cards.map(([l,v])=>`<div class="card"><div class="stat-label">${l}</div><div class="stat-value">${v}</div></div>`).join(''); const extra=[['Изменение расходов', `${Number(monthly.expense_delta||0)>=0?'+':''}${money(monthly.expense_delta||0,cur)}`],['Прогноз расходов', money(((monthly.forecast||{}).projected_expense)||0,cur)],['Операций', String(summary.operations_count||0)]]; document.getElementById('extraCards').innerHTML=extra.map(([l,v])=>`<div class="card"><div class="stat-label">${l}</div><div class="stat-value" style="font-size:1.1rem">${v}</div></div>`).join(''); }
+function renderTimeline(points){ const svg=document.getElementById('timelineChart'); if(!points||!points.length){svg.innerHTML='<text x="30" y="40" fill="#94a3b8">Нет данных за период</text>'; return;} const maxY=Math.max(...points.map(p=>Number(p.amount||0)),1); const stepX=1000/Math.max(points.length-1,1); const coords=points.map((p,i)=>{const x=i*stepX; const y=200-(Number(p.amount||0)/maxY)*170; return [x,y,p];}); const poly=coords.map(([x,y])=>`${x},${y}`).join(' '); const dots=coords.map(([x,y,p])=>`<circle cx="${x}" cy="${y}" r="4" fill="#38bdf8"><title>${p.date}: ${p.amount}</title></circle>`).join(''); svg.innerHTML=`<line x1="0" y1="200" x2="1000" y2="200" stroke="rgba(148,163,184,.35)" stroke-width="1" /><polyline fill="none" stroke="#38bdf8" stroke-width="4" points="${poly}" />${dots}`; }
+async function loadWorkspaceBootstrap(){ const data=await getJSON('/miniapp/public/bootstrap'); const ws=document.getElementById('workspaceSelect'); ws.innerHTML=(data.workspaces||[]).map(w=>`<option value="${w.id}" ${w.is_active?'selected':''}>${w.name} (${w.type})</option>`).join(''); document.getElementById('activeWorkspace').textContent=data.active_workspace?`Активное пространство: ${data.active_workspace.name} (${data.active_workspace.type}) • валюта ${data.active_workspace.base_currency}`:'Активное пространство не найдено'; setCards(data.dashboard.summary,data.monthly_report); fillSimpleList('categoriesList', data.dashboard.summary.top_categories||[], item=>{ const share=Number(item.share_percent||0); return row(`<strong>${item.category}</strong><div class="bar"><span style="width:${Math.min(share,100)}%"></span></div>`, `${money(item.amount,data.monthly_report.base_currency||'RUB')}<div class="muted">${share.toFixed(1)}%</div>`); }, 'Категорий пока нет'); fillSimpleList('participantsList', data.dashboard.summary.expense_by_user||[], item=>row(`<strong>${item.user}</strong><div class="muted">доля ${Number(item.share_percent||0).toFixed(1)}%</div>`, money(item.amount,data.monthly_report.base_currency||'RUB')), 'По участникам данных пока нет'); fillSimpleList('recentList', data.dashboard.recent_operations||[], item=>row(`<div><strong>${item.category||'Без категории'}</strong><div class="muted">${item.occurred_at} • ${item.user_username?('@'+item.user_username):''} ${item.comment||'—'}</div></div>`, `${item.type==='expense'?'−':'+'}${money(item.amount,item.currency||'RUB')}`), 'Операций пока нет'); fillSimpleList('limitsList', data.limits||[], item=>{ const percent=Number(item.percent_used||0); const extra=`<div class="muted">Потрачено ${money(item.spent,item.currency)} из ${money(item.amount,item.currency)} • остаток ${money(item.remaining,item.currency)}</div><div class="progress"><span style="width:${Math.min(percent,100)}%"></span></div>`; return row(`<strong>${item.label}</strong>`, `${percent}%`, extra); }, 'Активных лимитов пока нет'); renderTimeline(data.timeline||[]); fillSimpleList('membersMeta', data.members||[], item=>row(item.username?('@'+item.username):String(item.telegram_id), `<span class="badge">${item.role}</span>`), 'Участников пока нет'); const ai=data.analysis||{}; fillSimpleList('aiInsights', (ai.insights||[]).map(t=>({kind:'insight', text:t})).concat((ai.recommendations||[]).map(t=>({kind:'rec', text:t}))), item=>row(item.text, item.kind==='rec'?'✅':'🔎'), 'Пока не хватает данных для анализа'); }
+document.getElementById('refreshBtn').addEventListener('click', loadWorkspaceBootstrap); document.getElementById('workspaceSelect').addEventListener('change', async e=>{ await postJSON('/miniapp/public/workspaces/active',{workspace_id:Number(e.target.value)}); await loadWorkspaceBootstrap(); }); document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>{ document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active')); btn.classList.add('active'); document.getElementById('panel-'+btn.dataset.tab).classList.add('active'); })); loadWorkspaceBootstrap().catch(err=>{ document.getElementById('summaryCards').innerHTML=`<div class="card">Не удалось загрузить данные Mini App: ${String(err)}</div>`; });
+</script>
+</body>
+</html>
