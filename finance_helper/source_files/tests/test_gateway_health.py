@@ -1,10 +1,10 @@
-"""Модуль автоматических тестов проекта Finance Helper."""
+"""Smoke-тест проверки health-эндпоинта API-шлюза."""
 import httpx
 import pytest
 
 
 def test_gateway_health():
-    """Проверяет сценарий «gateway health»."""
+    """Проверяет доступность health-эндпоинта API-шлюза."""
     try:
         response = httpx.get("http://localhost:8000/health", timeout=5, trust_env=False)
     except httpx.ConnectError:

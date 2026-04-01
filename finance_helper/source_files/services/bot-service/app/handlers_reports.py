@@ -1,4 +1,4 @@
-"""Модуль сервисного слоя Telegram-бота Finance Helper."""
+"""Обработчики Telegram-бота для просмотра отчётов и настройки автоматической отправки."""
 from datetime import date, timedelta
 
 from aiogram import F
@@ -16,14 +16,14 @@ from .navigation import try_interrupt_current_flow
 
 @dp.message(F.text == "🗓 Отчёты")
 async def btn_reports(message: Message, state: FSMContext):
-    """Обрабатывает пользовательский сценарий «reports»."""
+    """Открывает раздел отчётов в боте."""
     await state.clear()
     await message.answer("Выбери действие по отчётам:", reply_markup=reports_menu_kb())
 
 
 @dp.callback_query(F.data == "report:this")
 async def cb_report_this(callback: CallbackQuery):
-    """Выполняет действие «cb report this» в рамках логики Finance Helper."""
+    """Обрабатывает callback для отчёта за текущий месяц."""
     today = date.today()
     text = await build_monthly_report_text(callback.from_user.id, today.year, today.month)
     await callback.message.answer(text, reply_markup=MENU_KB)
@@ -32,7 +32,7 @@ async def cb_report_this(callback: CallbackQuery):
 
 @dp.callback_query(F.data == "report:last")
 async def cb_report_last(callback: CallbackQuery):
-    """Выполняет действие «cb report last» в рамках логики Finance Helper."""
+    """Обрабатывает callback для отчёта за прошлый месяц."""
     today = date.today().replace(day=1)
     prev = today - timedelta(days=1)
     text = await build_monthly_report_text(callback.from_user.id, prev.year, prev.month)
@@ -42,7 +42,7 @@ async def cb_report_last(callback: CallbackQuery):
 
 @dp.callback_query(F.data == "report:analysis")
 async def cb_report_analysis(callback: CallbackQuery):
-    """Выполняет действие «cb report analysis» в рамках логики Finance Helper."""
+    """Обрабатывает callback для анализа трат."""
     today = date.today()
     text = await build_spending_analysis_text(callback.from_user.id, today.year, today.month)
     await callback.message.answer(text, reply_markup=MENU_KB)
@@ -51,7 +51,7 @@ async def cb_report_analysis(callback: CallbackQuery):
 
 @dp.callback_query(F.data == "report:status")
 async def cb_report_status(callback: CallbackQuery):
-    """Выполняет действие «cb report status» в рамках логики Finance Helper."""
+    """Обрабатывает callback для просмотра статуса автоматических отчётов."""
     items = await api.list_report_schedules(callback.from_user.id)
     if not items:
         await callback.message.answer("Автоотчёт пока не настроен.", reply_markup=MENU_KB)
@@ -66,7 +66,7 @@ async def cb_report_status(callback: CallbackQuery):
 
 @dp.callback_query(F.data == "report:setup")
 async def cb_report_setup(callback: CallbackQuery, state: FSMContext):
-    """Выполняет действие «cb report setup» в рамках логики Finance Helper."""
+    """Обрабатывает callback для настройки автоматического отчёта."""
     await state.clear()
     await state.set_state(ReportScheduleFlow.day)
     await callback.message.answer("Введи день месяца для автоотчёта: от 1 до 28.", reply_markup=MENU_KB)
@@ -75,7 +75,7 @@ async def cb_report_setup(callback: CallbackQuery, state: FSMContext):
 
 @dp.message(ReportScheduleFlow.day)
 async def reportflow_day(message: Message, state: FSMContext):
-    """Выполняет действие «reportflow day» в рамках логики Finance Helper."""
+    """Обрабатывает ввод пользователя на шаге ввода дня месяца для автосообщения."""
     if await try_interrupt_current_flow(message, state):
         return
     txt = (message.text or "").strip().lower()
@@ -97,7 +97,7 @@ async def reportflow_day(message: Message, state: FSMContext):
 
 @dp.message(ReportScheduleFlow.send_time)
 async def reportflow_send_time(message: Message, state: FSMContext):
-    """Выполняет действие «reportflow send time» в рамках логики Finance Helper."""
+    """Обрабатывает ввод пользователя на шаге ввода времени отправки отчёта."""
     if await try_interrupt_current_flow(message, state):
         return
     txt = (message.text or "").strip()
@@ -131,7 +131,7 @@ async def reportflow_send_time(message: Message, state: FSMContext):
 
 @dp.callback_query(F.data == "report:disable")
 async def cb_report_disable(callback: CallbackQuery):
-    """Выполняет действие «cb report disable» в рамках логики Finance Helper."""
+    """Обрабатывает callback для отключения автоматического отчёта."""
     items = await api.list_report_schedules(callback.from_user.id)
     monthly = next((item for item in items if item.get('frequency') == 'monthly'), None)
     if monthly is None:

@@ -1,9 +1,9 @@
-"""Модуль сервисного слоя Telegram-бота Finance Helper."""
+"""Настройки Telegram-бота: токен, адрес шлюза, секрет Mini App и каталог загрузок."""
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
-    """Класс «Settings» описывает состояние или структуру данных данного модуля."""
+    """Настройки Telegram-бота, которые считываются из переменных окружения."""
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     bot_token: str = Field(default="", validation_alias="BOT_TOKEN")

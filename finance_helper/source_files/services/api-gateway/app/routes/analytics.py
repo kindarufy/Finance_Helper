@@ -1,4 +1,4 @@
-"""Модуль маршрутов API-шлюза Finance Helper."""
+"""Маршруты API-шлюза для отчётов, анализа трат и уведомлений сервиса аналитики."""
 from __future__ import annotations
 
 from datetime import date
@@ -14,7 +14,7 @@ router = APIRouter()
 
 @router.get("/reports/summary", dependencies=[Depends(require_internal_key)])
 async def report_summary(telegram_id: int = Query(...), workspace_id: int | None = Query(None), date_from: date | None = Query(None), date_to: date | None = Query(None), x_api_key: str = Header(alias="X-API-Key")):
-    """Выполняет действие «report summary» в рамках логики Finance Helper."""
+    """Проксирует запрос на получение сводного отчёта."""
     params: dict[str, object] = {"telegram_id": telegram_id}
     if workspace_id is not None:
         params["workspace_id"] = workspace_id
@@ -27,7 +27,7 @@ async def report_summary(telegram_id: int = Query(...), workspace_id: int | None
 
 @router.get("/reports/monthly", dependencies=[Depends(require_internal_key)])
 async def report_monthly(telegram_id: int = Query(...), workspace_id: int | None = Query(None), year: int = Query(...), month: int = Query(...), x_api_key: str = Header(alias="X-API-Key")):
-    """Выполняет действие «report monthly» в рамках логики Finance Helper."""
+    """Проксирует запрос на получение ежемесячного отчёта."""
     params: dict[str, object] = {"telegram_id": telegram_id, "year": year, "month": month}
     if workspace_id is not None:
         params["workspace_id"] = workspace_id
@@ -36,7 +36,7 @@ async def report_monthly(telegram_id: int = Query(...), workspace_id: int | None
 
 @router.get("/analysis/spending", dependencies=[Depends(require_internal_key)])
 async def analysis_spending(telegram_id: int = Query(...), workspace_id: int | None = Query(None), year: int = Query(...), month: int = Query(...), x_api_key: str = Header(alias="X-API-Key")):
-    """Выполняет действие «analysis spending» в рамках логики Finance Helper."""
+    """Проксирует запрос на получение анализа трат."""
     params: dict[str, object] = {"telegram_id": telegram_id, "year": year, "month": month}
     if workspace_id is not None:
         params["workspace_id"] = workspace_id
@@ -45,7 +45,7 @@ async def analysis_spending(telegram_id: int = Query(...), workspace_id: int | N
 
 @router.post("/notify/daily", dependencies=[Depends(require_internal_key)])
 async def notify_daily(telegram_id: int = Query(...), workspace_id: int | None = Query(None), x_api_key: str = Header(alias="X-API-Key")):
-    """Выполняет действие «notify daily» в рамках логики Finance Helper."""
+    """Запускает отправку дневной сводки пользователю."""
     params: dict[str, object] = {"telegram_id": telegram_id}
     if workspace_id is not None:
         params["workspace_id"] = workspace_id
@@ -54,7 +54,7 @@ async def notify_daily(telegram_id: int = Query(...), workspace_id: int | None =
 
 @router.post("/notify/monthly", dependencies=[Depends(require_internal_key)])
 async def notify_monthly(telegram_id: int = Query(...), workspace_id: int | None = Query(None), year: int | None = Query(None), month: int | None = Query(None), x_api_key: str = Header(alias="X-API-Key")):
-    """Выполняет действие «notify monthly» в рамках логики Finance Helper."""
+    """Запускает отправку ежемесячного отчёта пользователю."""
     params: dict[str, object] = {"telegram_id": telegram_id}
     if workspace_id is not None:
         params["workspace_id"] = workspace_id
@@ -67,7 +67,7 @@ async def notify_monthly(telegram_id: int = Query(...), workspace_id: int | None
 
 @router.post("/notify/monthly/run-due", dependencies=[Depends(require_internal_key)])
 async def notify_monthly_run_due(run_date: date | None = Query(None), send_time: str | None = Query(None), x_api_key: str = Header(alias="X-API-Key")):
-    """Выполняет действие «notify monthly run due» в рамках логики Finance Helper."""
+    """Запускает отправку всех ежемесячных отчётов, срок которых наступил."""
     params: dict[str, object] = {}
     if run_date is not None:
         params["run_date"] = run_date.isoformat()

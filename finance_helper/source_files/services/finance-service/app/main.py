@@ -1,4 +1,4 @@
-"""Модуль финансового сервиса Finance Helper."""
+"""FastAPI-приложение финансового сервиса с маршрутами для пользователей, операций, лимитов и импортов."""
 from datetime import date
 
 from fastapi import Depends, FastAPI, HTTPException, Query
@@ -14,12 +14,12 @@ app = FastAPI(title="Finance Service", version="0.8-release-stage12-13")
 
 @app.get("/health", response_model=schemas.Health)
 def health():
-    """Выполняет действие «health» в рамках логики Finance Helper."""
+    """Возвращает ответ для проверки, что финансовый сервис работает."""
     return schemas.Health()
 
 
 def _raise_from_value_error(exc: ValueError) -> None:
-    """Выполняет действие «raise from value error» в рамках логики Finance Helper."""
+    """Преобразует ValueError бизнес-логики в HTTP-ошибку с нужным статусом."""
     detail = str(exc)
     status = 400
     if detail in {"user_not_found", "workspace_not_found", "category_not_found", "op_not_found", "member_user_not_found"}:
@@ -34,7 +34,7 @@ def _raise_from_value_error(exc: ValueError) -> None:
 
 
 def _user_out(user: models.User) -> schemas.UserOut:
-    """Выполняет действие «user out» в рамках логики Finance Helper."""
+    """Преобразует ORM-модель пользователя в схему ответа."""
     return schemas.UserOut(
         telegram_id=user.telegram_id,
         username=user.username,
@@ -47,7 +47,7 @@ def _user_out(user: models.User) -> schemas.UserOut:
 
 
 def _category_out(c: models.Category) -> schemas.CategoryOut:
-    """Выполняет действие «category out» в рамках логики Finance Helper."""
+    """Преобразует ORM-модель категории в схему ответа."""
     return schemas.CategoryOut(
         id=c.id,
         workspace_id=c.workspace_id,
@@ -59,7 +59,7 @@ def _category_out(c: models.Category) -> schemas.CategoryOut:
 
 
 def _operation_out(db: Session, op: models.Operation, category_name: str | None = None) -> schemas.OperationOut:
-    """Выполняет действие «operation out» в рамках логики Finance Helper."""
+    """Преобразует ORM-модель операции в схему ответа."""
     subject = db.get(models.User, op.user_id)
     actor = db.get(models.User, op.created_by_user_id)
     if category_name is None and op.category_id:
@@ -83,14 +83,14 @@ def _operation_out(db: Session, op: models.Operation, category_name: str | None 
 
 @app.post("/users/upsert", dependencies=[Depends(require_internal_key)], response_model=schemas.UserOut)
 def upsert_user(payload: schemas.UserUpsertIn, db: Session = Depends(get_db)):
-    """Выполняет действие «upsert user» в рамках логики Finance Helper."""
+    """Создаёт или обновляет пользователя."""
     user = crud.upsert_user(db, payload.telegram_id, payload.username)
     return _user_out(user)
 
 
 @app.post("/users/setlimit", dependencies=[Depends(require_internal_key)], response_model=schemas.UserOut)
 def set_limit(payload: schemas.SetLimitIn, db: Session = Depends(get_db)):
-    """Выполняет действие «set limit» в рамках логики Finance Helper."""
+    """Устанавливает лимит."""
     try:
         user = crud.set_daily_limit(db, payload.telegram_id, payload.daily_limit)
     except ValueError as exc:
@@ -100,7 +100,7 @@ def set_limit(payload: schemas.SetLimitIn, db: Session = Depends(get_db)):
 
 @app.get("/workspaces", dependencies=[Depends(require_internal_key)], response_model=list[schemas.WorkspaceOut])
 def workspaces(telegram_id: int = Query(...), db: Session = Depends(get_db)):
-    """Выполняет действие «workspaces» в рамках логики Finance Helper."""
+    """Возвращает список пространств пользователя."""
     try:
         items = crud.list_workspaces(db, telegram_id)
         requester = crud.get_user(db, telegram_id)
@@ -127,7 +127,7 @@ def workspaces(telegram_id: int = Query(...), db: Session = Depends(get_db)):
 
 @app.get("/workspaces/active", dependencies=[Depends(require_internal_key)], response_model=schemas.WorkspaceOut)
 def active_workspace(telegram_id: int = Query(...), db: Session = Depends(get_db)):
-    """Выполняет действие «active workspace» в рамках логики Finance Helper."""
+    """Возвращает активное пространство пользователя."""
     try:
         item = crud.get_active_workspace(db, telegram_id)
         requester = crud.get_user(db, telegram_id)
@@ -148,7 +148,7 @@ def active_workspace(telegram_id: int = Query(...), db: Session = Depends(get_db
 
 @app.post("/workspaces/active", dependencies=[Depends(require_internal_key)], response_model=schemas.WorkspaceOut)
 def set_active_workspace(payload: schemas.WorkspaceSetActiveIn, db: Session = Depends(get_db)):
-    """Выполняет действие «set active workspace» в рамках логики Finance Helper."""
+    """Устанавливает активное пространство пользователя."""
     try:
         item = crud.set_active_workspace(db, payload.telegram_id, payload.workspace_id)
         requester = crud.get_user(db, payload.telegram_id)
@@ -169,7 +169,7 @@ def set_active_workspace(payload: schemas.WorkspaceSetActiveIn, db: Session = De
 
 @app.post("/workspaces", dependencies=[Depends(require_internal_key)], response_model=schemas.WorkspaceOut)
 def create_workspace(payload: schemas.WorkspaceCreateIn, db: Session = Depends(get_db)):
-    """Создаёт сущность для сценария «workspace»."""
+    """Создаёт пространство."""
     try:
         item = crud.create_workspace(db, payload.telegram_id, payload.name, payload.type, payload.base_currency)
         owner = db.get(models.User, item.owner_user_id)
@@ -191,7 +191,7 @@ def create_workspace(payload: schemas.WorkspaceCreateIn, db: Session = Depends(g
 
 @app.get("/workspaces/{workspace_id}/members", dependencies=[Depends(require_internal_key)], response_model=list[schemas.WorkspaceMemberOut])
 def workspace_members(workspace_id: int, telegram_id: int = Query(...), db: Session = Depends(get_db)):
-    """Выполняет действие «workspace members» в рамках логики Finance Helper."""
+    """Возвращает участников пространства."""
     try:
         items = crud.list_workspace_members(db, telegram_id, workspace_id)
     except ValueError as exc:
@@ -201,7 +201,7 @@ def workspace_members(workspace_id: int, telegram_id: int = Query(...), db: Sess
 
 @app.post("/workspaces/{workspace_id}/members", dependencies=[Depends(require_internal_key)], response_model=schemas.WorkspaceMemberOut)
 def add_workspace_member(workspace_id: int, payload: schemas.WorkspaceMemberAddIn, db: Session = Depends(get_db)):
-    """Выполняет действие «add workspace member» в рамках логики Finance Helper."""
+    """Добавляет участника пространства."""
     try:
         member_user = crud.resolve_user_by_identifier(db, payload.member_identifier)
         item = crud.add_workspace_member(
@@ -229,7 +229,7 @@ def categories(
     include_archived: bool = Query(False),
     db: Session = Depends(get_db),
 ):
-    """Выполняет действие «categories» в рамках логики Finance Helper."""
+    """Возвращает категории пространства."""
     try:
         cats = crud.list_categories(db, telegram_id, workspace_id, category_type, include_archived)
     except ValueError as exc:
@@ -239,7 +239,7 @@ def categories(
 
 @app.post("/categories", dependencies=[Depends(require_internal_key)], response_model=schemas.CategoryOut)
 def create_category(payload: schemas.CategoryCreateIn, db: Session = Depends(get_db)):
-    """Создаёт сущность для сценария «category»."""
+    """Создаёт категорию."""
     try:
         c = crud.create_category(
             db,
@@ -256,7 +256,7 @@ def create_category(payload: schemas.CategoryCreateIn, db: Session = Depends(get
 
 @app.patch("/categories/{category_id}", dependencies=[Depends(require_internal_key)], response_model=schemas.CategoryOut)
 def update_category(category_id: int, payload: schemas.CategoryUpdateIn, db: Session = Depends(get_db)):
-    """Обновляет данные в сценарии «category»."""
+    """Обновляет категорию."""
     try:
         c = crud.update_category(db, payload.telegram_id, category_id, payload.name, payload.emoji, payload.is_archived)
     except ValueError as exc:
@@ -266,7 +266,7 @@ def update_category(category_id: int, payload: schemas.CategoryUpdateIn, db: Ses
 
 @app.get("/categories/{category_id}/aliases", dependencies=[Depends(require_internal_key)], response_model=list[schemas.CategoryAliasOut])
 def category_aliases(category_id: int, telegram_id: int = Query(...), db: Session = Depends(get_db)):
-    """Выполняет действие «category aliases» в рамках логики Finance Helper."""
+    """Возвращает ключевые слова выбранной категории."""
     try:
         items = crud.list_aliases(db, telegram_id, category_id)
     except ValueError as exc:
@@ -276,7 +276,7 @@ def category_aliases(category_id: int, telegram_id: int = Query(...), db: Sessio
 
 @app.post("/categories/{category_id}/aliases", dependencies=[Depends(require_internal_key)], response_model=schemas.CategoryAliasOut)
 def create_alias(category_id: int, payload: schemas.CategoryAliasCreateIn, db: Session = Depends(get_db)):
-    """Создаёт сущность для сценария «alias»."""
+    """Создаёт ключевое слово категории."""
     try:
         item = crud.create_alias(db, payload.telegram_id, category_id, payload.alias)
     except ValueError as exc:
@@ -286,7 +286,7 @@ def create_alias(category_id: int, payload: schemas.CategoryAliasCreateIn, db: S
 
 @app.delete("/aliases/{alias_id}", dependencies=[Depends(require_internal_key)], response_model=schemas.DeleteResult)
 def delete_alias(alias_id: int, telegram_id: int = Query(...), db: Session = Depends(get_db)):
-    """Удаляет сущность в сценарии «alias»."""
+    """Удаляет ключевое слово категории."""
     try:
         deleted = crud.delete_alias(db, telegram_id, alias_id)
     except ValueError as exc:
@@ -296,7 +296,7 @@ def delete_alias(alias_id: int, telegram_id: int = Query(...), db: Session = Dep
 
 @app.post("/categories/match", dependencies=[Depends(require_internal_key)], response_model=schemas.CategoryMatchOut)
 def match_category(payload: schemas.CategoryMatchIn, db: Session = Depends(get_db)):
-    """Выполняет действие «match category» в рамках логики Finance Helper."""
+    """Подбирает категорию по тексту операции и алиасам."""
     try:
         category = crud.match_category(db, payload.telegram_id, payload.workspace_id, payload.text, payload.type)
     except ValueError as exc:
@@ -308,7 +308,7 @@ def match_category(payload: schemas.CategoryMatchIn, db: Session = Depends(get_d
 
 @app.post("/operations", dependencies=[Depends(require_internal_key)])
 def create_operation(payload: schemas.OperationCreateIn, db: Session = Depends(get_db)):
-    """Создаёт сущность для сценария «operation»."""
+    """Создаёт операцию."""
     try:
         op = crud.create_operation(
             db=db,
@@ -362,7 +362,7 @@ def list_ops(
     search: str | None = Query(None),
     db: Session = Depends(get_db),
 ):
-    """Возвращает список сущностей для сценария «ops»."""
+    """Возвращает список: операции."""
     try:
         rows = crud.list_operations(
             db,
@@ -388,7 +388,7 @@ def list_ops(
 
 @app.patch("/operations/{op_id}", dependencies=[Depends(require_internal_key)], response_model=schemas.OperationOut)
 def update_op(op_id: int, payload: schemas.OperationUpdateIn, db: Session = Depends(get_db)):
-    """Обновляет данные в сценарии «op»."""
+    """Обновляет операцию."""
     try:
         op = crud.update_operation(
             db=db,
@@ -407,7 +407,7 @@ def update_op(op_id: int, payload: schemas.OperationUpdateIn, db: Session = Depe
 
 @app.delete("/operations/{op_id}", dependencies=[Depends(require_internal_key)], response_model=schemas.DeleteResult)
 def delete_op(op_id: int, telegram_id: int = Query(...), db: Session = Depends(get_db)):
-    """Удаляет сущность в сценарии «op»."""
+    """Удаляет операцию."""
     try:
         deleted = crud.delete_operation(db, telegram_id, op_id)
     except ValueError as exc:
@@ -417,7 +417,7 @@ def delete_op(op_id: int, telegram_id: int = Query(...), db: Session = Depends(g
 
 @app.get("/limits", dependencies=[Depends(require_internal_key)], response_model=list[schemas.BudgetLimitOut])
 def limits(telegram_id: int = Query(...), workspace_id: int | None = Query(None), db: Session = Depends(get_db)):
-    """Выполняет действие «limits» в рамках логики Finance Helper."""
+    """Возвращает список лимитов для пользователя или пространства."""
     try:
         items = crud.list_budget_limits(db, telegram_id, workspace_id)
     except ValueError as exc:
@@ -443,7 +443,7 @@ def limits(telegram_id: int = Query(...), workspace_id: int | None = Query(None)
 
 @app.get("/limits/overview", dependencies=[Depends(require_internal_key)], response_model=list[schemas.BudgetLimitStatusOut])
 def limits_overview(telegram_id: int = Query(...), workspace_id: int | None = Query(None), ref_date: date | None = Query(None), db: Session = Depends(get_db)):
-    """Выполняет действие «limits overview» в рамках логики Finance Helper."""
+    """Возвращает сводку по использованию лимитов."""
     try:
         items = crud.get_budget_limits_overview(db, telegram_id, workspace_id, ref_date)
     except ValueError as exc:
@@ -453,7 +453,7 @@ def limits_overview(telegram_id: int = Query(...), workspace_id: int | None = Qu
 
 @app.post("/limits", dependencies=[Depends(require_internal_key)], response_model=schemas.BudgetLimitOut)
 def create_limit(payload: schemas.BudgetLimitCreateIn, db: Session = Depends(get_db)):
-    """Создаёт сущность для сценария «limit»."""
+    """Создаёт лимит."""
     try:
         item = crud.create_or_update_budget_limit(
             db,
@@ -487,7 +487,7 @@ def create_limit(payload: schemas.BudgetLimitCreateIn, db: Session = Depends(get
 
 @app.get("/report-schedules", dependencies=[Depends(require_internal_key)], response_model=list[schemas.ReportScheduleOut])
 def report_schedules(telegram_id: int = Query(...), workspace_id: int | None = Query(None), db: Session = Depends(get_db)):
-    """Выполняет действие «report schedules» в рамках логики Finance Helper."""
+    """Возвращает расписания автоматических отчётов."""
     try:
         items = crud.list_report_schedules(db, telegram_id, workspace_id)
     except ValueError as exc:
@@ -512,7 +512,7 @@ def report_schedules(telegram_id: int = Query(...), workspace_id: int | None = Q
 
 @app.post("/report-schedules", dependencies=[Depends(require_internal_key)], response_model=schemas.ReportScheduleOut)
 def create_report_schedule(payload: schemas.ReportScheduleUpsertIn, db: Session = Depends(get_db)):
-    """Создаёт сущность для сценария «report schedule»."""
+    """Создаёт расписание отчёта."""
     try:
         item = crud.upsert_report_schedule(
             db,
@@ -542,13 +542,13 @@ def create_report_schedule(payload: schemas.ReportScheduleUpsertIn, db: Session 
 
 @app.get("/report-schedules/due", dependencies=[Depends(require_internal_key)], response_model=list[schemas.DueReportScheduleOut])
 def due_report_schedules(run_date: date = Query(...), send_time: str = Query(..., pattern=r"^\d{2}:\d{2}$"), db: Session = Depends(get_db)):
-    """Выполняет действие «due report schedules» в рамках логики Finance Helper."""
+    """Возвращает расписания отчётов, которые нужно отправить сейчас."""
     items = crud.list_due_report_schedules(db, run_date=run_date, send_time=send_time)
     return [schemas.DueReportScheduleOut(**item) for item in items]
 
 
 def _receipt_out(item: models.ReceiptUpload) -> schemas.ReceiptUploadOut:
-    """Выполняет действие «receipt out» в рамках логики Finance Helper."""
+    """Преобразует ORM-модель чека в схему ответа."""
     return schemas.ReceiptUploadOut(
         id=item.id,
         workspace_id=item.workspace_id,
@@ -566,7 +566,7 @@ def _receipt_out(item: models.ReceiptUpload) -> schemas.ReceiptUploadOut:
 
 
 def _statement_import_out(item: models.StatementImport) -> schemas.StatementImportOut:
-    """Выполняет действие «statement import out» в рамках логики Finance Helper."""
+    """Преобразует ORM-модель импорта выписки в схему ответа."""
     return schemas.StatementImportOut(
         id=item.id,
         workspace_id=item.workspace_id,
@@ -582,7 +582,7 @@ def _statement_import_out(item: models.StatementImport) -> schemas.StatementImpo
 
 @app.post("/receipts", dependencies=[Depends(require_internal_key)], response_model=schemas.ReceiptUploadOut)
 def create_receipt(payload: schemas.ReceiptUploadCreateIn, db: Session = Depends(get_db)):
-    """Создаёт сущность для сценария «receipt»."""
+    """Создаёт чек."""
     try:
         item = crud.create_receipt_upload(
             db,
@@ -599,7 +599,7 @@ def create_receipt(payload: schemas.ReceiptUploadCreateIn, db: Session = Depends
 
 @app.post("/receipts/{receipt_id}/parse", dependencies=[Depends(require_internal_key)], response_model=schemas.ReceiptUploadOut)
 def parse_receipt(receipt_id: int, payload: schemas.ReceiptParseIn, db: Session = Depends(get_db)):
-    """Разбирает входные данные для сценария «receipt»."""
+    """Сохраняет результат распознавания загруженного чека."""
     try:
         item = crud.update_receipt_upload(
             db,
@@ -620,7 +620,7 @@ def parse_receipt(receipt_id: int, payload: schemas.ReceiptParseIn, db: Session 
 
 @app.post("/receipts/{receipt_id}/confirm", dependencies=[Depends(require_internal_key)])
 def confirm_receipt(receipt_id: int, payload: schemas.ReceiptConfirmIn, db: Session = Depends(get_db)):
-    """Выполняет действие «confirm receipt» в рамках логики Finance Helper."""
+    """Подтверждает чек."""
     try:
         op = crud.confirm_receipt_upload(
             db,
@@ -639,7 +639,7 @@ def confirm_receipt(receipt_id: int, payload: schemas.ReceiptConfirmIn, db: Sess
 
 @app.post("/statement-imports", dependencies=[Depends(require_internal_key)], response_model=schemas.StatementImportOut)
 def create_statement_import(payload: schemas.StatementImportCreateIn, db: Session = Depends(get_db)):
-    """Создаёт сущность для сценария «statement import»."""
+    """Создаёт запись о загрузке банковской выписки."""
     try:
         item = crud.create_statement_import(
             db,
@@ -656,7 +656,7 @@ def create_statement_import(payload: schemas.StatementImportCreateIn, db: Sessio
 
 @app.post("/statement-imports/{import_id}/complete", dependencies=[Depends(require_internal_key)], response_model=schemas.StatementImportOut)
 def complete_statement_import(import_id: int, payload: schemas.StatementImportCompleteIn, db: Session = Depends(get_db)):
-    """Выполняет действие «complete statement import» в рамках логики Finance Helper."""
+    """Завершает импорт банковской выписки и сохраняет итоговый статус."""
     try:
         item = crud.finalize_statement_import(
             db,

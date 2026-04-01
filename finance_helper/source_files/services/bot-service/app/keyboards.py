@@ -1,4 +1,4 @@
-"""Модуль сервисного слоя Telegram-бота Finance Helper."""
+"""Готовые клавиатуры Telegram-бота для меню, отчётов, операций, лимитов и пространств."""
 from aiogram.types import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
@@ -26,7 +26,7 @@ MENU_KB = ReplyKeyboardMarkup(
 
 
 def budget_menu_kb() -> InlineKeyboardMarkup:
-    """Выполняет действие «budget menu kb» в рамках логики Finance Helper."""
+    """Создаёт клавиатуру раздела лимитов и бюджетов."""
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="📅 Лимит на день", callback_data="budget:daily")],
         [InlineKeyboardButton(text="🗓 Лимит на месяц", callback_data="budget:monthly")],
@@ -36,7 +36,7 @@ def budget_menu_kb() -> InlineKeyboardMarkup:
 
 
 def reports_menu_kb() -> InlineKeyboardMarkup:
-    """Выполняет действие «reports menu kb» в рамках логики Finance Helper."""
+    """Создаёт клавиатуру раздела отчётов."""
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="📆 Отчёт за текущий месяц", callback_data="report:this")],
         [InlineKeyboardButton(text="📅 Отчёт за прошлый месяц", callback_data="report:last")],
@@ -48,7 +48,7 @@ def reports_menu_kb() -> InlineKeyboardMarkup:
 
 
 def export_menu_kb() -> InlineKeyboardMarkup:
-    """Выполняет действие «export menu kb» в рамках логики Finance Helper."""
+    """Создаёт клавиатуру раздела экспорта."""
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="📄 CSV за текущий месяц", callback_data="export:month:csv")],
         [InlineKeyboardButton(text="📗 XLSX за текущий месяц", callback_data="export:month:xlsx")],
@@ -62,7 +62,7 @@ def export_menu_kb() -> InlineKeyboardMarkup:
 
 
 def build_miniapp_open_kb(url: str) -> InlineKeyboardMarkup:
-    """Собирает итоговую структуру или текст для сценария «miniapp open kb»."""
+    """Создаёт клавиатуру с кнопкой открытия Mini App."""
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="📱 Открыть Mini App", web_app=WebAppInfo(url=url))],
         [InlineKeyboardButton(text="🔗 Открыть по ссылке", url=url)],
@@ -70,7 +70,7 @@ def build_miniapp_open_kb(url: str) -> InlineKeyboardMarkup:
 
 
 def workspace_menu_kb() -> InlineKeyboardMarkup:
-    """Выполняет действие «workspace menu kb» в рамках логики Finance Helper."""
+    """Создаёт клавиатуру раздела совместных пространств."""
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="📂 Мои пространства", callback_data="ws:list")],
         [InlineKeyboardButton(text="📊 Статистика активного пространства", callback_data="ws:stats")],
@@ -84,7 +84,7 @@ def workspace_menu_kb() -> InlineKeyboardMarkup:
 
 
 def workspace_switch_kb(items: list[dict]) -> InlineKeyboardMarkup:
-    """Выполняет действие «workspace switch kb» в рамках логики Finance Helper."""
+    """Создаёт клавиатуру переключения между пространствами."""
     rows = []
     for item in items:
         marker = "✅ " if item.get("is_active") else ""
@@ -94,7 +94,7 @@ def workspace_switch_kb(items: list[dict]) -> InlineKeyboardMarkup:
 
 
 def workspace_role_kb() -> InlineKeyboardMarkup:
-    """Выполняет действие «workspace role kb» в рамках логики Finance Helper."""
+    """Создаёт клавиатуру выбора роли участника."""
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="✍️ Editor", callback_data="ws:role:editor")],
         [InlineKeyboardButton(text="👀 Viewer", callback_data="ws:role:viewer")],
@@ -102,7 +102,7 @@ def workspace_role_kb() -> InlineKeyboardMarkup:
 
 
 def ops_picker_kb(action: str, items: list[dict], offset: int) -> InlineKeyboardMarkup:
-    """Выполняет действие «ops picker kb» в рамках логики Finance Helper."""
+    """Создаёт клавиатуру выбора операции."""
     rows: list[list[InlineKeyboardButton]] = []
     for op in items:
         op_id = op["id"]
@@ -127,21 +127,21 @@ def ops_picker_kb(action: str, items: list[dict], offset: int) -> InlineKeyboard
 
 
 def confirm_delete_kb(op_id: int) -> InlineKeyboardMarkup:
-    """Выполняет действие «confirm delete kb» в рамках логики Finance Helper."""
+    """Создаёт клавиатуру подтверждения удаления."""
     return InlineKeyboardMarkup(
         inline_keyboard=[[InlineKeyboardButton(text="✅ Да, удалить", callback_data=f"dy:{op_id}"), InlineKeyboardButton(text="❌ Отмена", callback_data="dcancel")]]
     )
 
 
 def natural_confirm_kb() -> InlineKeyboardMarkup:
-    """Выполняет действие «natural confirm kb» в рамках логики Finance Helper."""
+    """Создаёт клавиатуру подтверждения распознанной операции."""
     return InlineKeyboardMarkup(
         inline_keyboard=[[InlineKeyboardButton(text="✅ Сохранить", callback_data="nsave"), InlineKeyboardButton(text="❌ Отмена", callback_data="ncancel")]]
     )
 
 
 def workspace_manage_members_kb(workspace_id: int, items: list[dict], owner_tg: int | None = None) -> InlineKeyboardMarkup:
-    """Выполняет действие «workspace manage members kb» в рамках логики Finance Helper."""
+    """Создаёт клавиатуру управления участниками пространства."""
     rows = []
     for item in items:
         tg = int(item['telegram_id'])
@@ -154,7 +154,7 @@ def workspace_manage_members_kb(workspace_id: int, items: list[dict], owner_tg: 
 
 
 def workspace_member_actions_kb(workspace_id: int, member_telegram_id: int) -> InlineKeyboardMarkup:
-    """Выполняет действие «workspace member actions kb» в рамках логики Finance Helper."""
+    """Создаёт клавиатуру действий с выбранным участником."""
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="✍️ Сделать editor", callback_data=f"wsmr:{workspace_id}:{member_telegram_id}:editor")],
         [InlineKeyboardButton(text="👀 Сделать viewer", callback_data=f"wsmr:{workspace_id}:{member_telegram_id}:viewer")],

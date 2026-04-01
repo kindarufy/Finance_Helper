@@ -1,4 +1,4 @@
-"""Модуль маршрутов API-шлюза Finance Helper."""
+"""Маршруты API-шлюза для выгрузки операций в CSV и XLSX."""
 from __future__ import annotations
 
 from datetime import date
@@ -15,7 +15,7 @@ router = APIRouter()
 
 
 def _build_export_params(telegram_id: int, workspace_id: int | None, date_from: date | None, date_to: date | None, op_type: str | None) -> dict[str, object]:
-    """Собирает итоговую структуру или текст для сценария «export params»."""
+    """Собирает параметры запроса для выгрузки операций."""
     params: dict[str, object] = {"telegram_id": telegram_id}
     if workspace_id is not None:
         params["workspace_id"] = workspace_id
@@ -30,7 +30,7 @@ def _build_export_params(telegram_id: int, workspace_id: int | None, date_from: 
 
 @router.get("/exports/csv", dependencies=[Depends(require_internal_key)])
 async def export_csv(telegram_id: int = Query(...), workspace_id: int | None = Query(None), date_from: date | None = Query(None), date_to: date | None = Query(None), op_type: str | None = Query(None), x_api_key: str = Header(alias="X-API-Key")):
-    """Выполняет действие «export csv» в рамках логики Finance Helper."""
+    """Проксирует выгрузку операций в CSV."""
     response = await forward("GET", f"{settings.analytics_url}/exports/csv", x_api_key=x_api_key, params=_build_export_params(telegram_id, workspace_id, date_from, date_to, op_type))
     if response.status_code >= 400:
         raise_proxy_error(response)
@@ -39,7 +39,7 @@ async def export_csv(telegram_id: int = Query(...), workspace_id: int | None = Q
 
 @router.get("/exports/xlsx", dependencies=[Depends(require_internal_key)])
 async def export_xlsx(telegram_id: int = Query(...), workspace_id: int | None = Query(None), date_from: date | None = Query(None), date_to: date | None = Query(None), op_type: str | None = Query(None), x_api_key: str = Header(alias="X-API-Key")):
-    """Выполняет действие «export xlsx» в рамках логики Finance Helper."""
+    """Проксирует выгрузку операций в XLSX."""
     response = await forward("GET", f"{settings.analytics_url}/exports/xlsx", x_api_key=x_api_key, params=_build_export_params(telegram_id, workspace_id, date_from, date_to, op_type))
     if response.status_code >= 400:
         raise_proxy_error(response)

@@ -1,4 +1,4 @@
-"""Модуль сервиса аналитики Finance Helper."""
+"""HTTP-клиент сервиса аналитики для запросов к finance-service и отправки сообщений в Telegram."""
 from __future__ import annotations
 
 from datetime import date
@@ -9,7 +9,7 @@ from .config import settings
 
 
 def _headers() -> dict[str, str]:
-    """Выполняет действие «headers» в рамках логики Finance Helper."""
+    """Возвращает заголовки с внутренним API-ключом для межсервисных запросов."""
     return {"X-API-Key": settings.internal_api_key}
 
 
@@ -25,7 +25,7 @@ async def fetch_operations(
     actor_telegram_id: int | None = None,
     search: str | None = None,
 ) -> list[dict]:
-    """Выполняет действие «fetch operations» в рамках логики Finance Helper."""
+    """Постранично запрашивает операции из финансового сервиса с учётом переданных фильтров."""
     per_page = 200
     offset = 0
     result: list[dict] = []
@@ -63,7 +63,7 @@ async def fetch_operations(
 
 
 async def fetch_limit_overview(telegram_id: int, workspace_id: int | None = None, ref_date: date | None = None) -> list[dict]:
-    """Выполняет действие «fetch limit overview» в рамках логики Finance Helper."""
+    """Запрашивает сводку по лимитам из финансового сервиса."""
     params: dict[str, object] = {"telegram_id": telegram_id}
     if workspace_id is not None:
         params["workspace_id"] = workspace_id
@@ -76,7 +76,7 @@ async def fetch_limit_overview(telegram_id: int, workspace_id: int | None = None
 
 
 async def fetch_due_report_schedules(run_date: date, send_time: str) -> list[dict]:
-    """Выполняет действие «fetch due report schedules» в рамках логики Finance Helper."""
+    """Получает расписания отчётов, которые нужно отправить в указанное время."""
     params = {"run_date": run_date.isoformat(), "send_time": send_time}
     async with httpx.AsyncClient(timeout=20.0) as client:
         r = await client.get(f"{settings.finance_url}/report-schedules/due", params=params, headers=_headers())
@@ -85,7 +85,7 @@ async def fetch_due_report_schedules(run_date: date, send_time: str) -> list[dic
 
 
 async def send_telegram_message(chat_id: int, text: str) -> bool:
-    """Отправляет данные, относящиеся к сценарию «telegram message»."""
+    """Отправляет текстовое сообщение пользователю через Bot API Telegram."""
     if not settings.bot_token:
         return False
     url = f"https://api.telegram.org/bot{settings.bot_token}/sendMessage"

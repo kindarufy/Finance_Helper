@@ -1,4 +1,4 @@
-"""Модуль сервисного слоя Telegram-бота Finance Helper."""
+"""Клиент Telegram-бота для обращения к API-шлюзу Finance Helper."""
 from __future__ import annotations
 
 from datetime import date
@@ -10,12 +10,12 @@ from .miniapp_auth import sign_miniapp_token
 
 
 def _headers() -> dict[str, str]:
-    """Выполняет действие «headers» в рамках логики Finance Helper."""
+    """Возвращает заголовки с внутренним API-ключом для запросов бота к API-шлюзу."""
     return {"X-API-Key": settings.internal_api_key}
 
 
 async def upsert_user(telegram_id: int, username: str | None):
-    """Выполняет действие «upsert user» в рамках логики Finance Helper."""
+    """Создаёт пользователя в системе или обновляет его имя пользователя Telegram."""
     async with httpx.AsyncClient(timeout=15.0) as client:
         r = await client.post(
             f"{settings.gateway_url}/users/upsert",
@@ -27,7 +27,7 @@ async def upsert_user(telegram_id: int, username: str | None):
 
 
 async def set_limit(telegram_id: int, daily_limit: float):
-    """Выполняет действие «set limit» в рамках логики Finance Helper."""
+    """Устанавливает дневной лимит пользователя через API-шлюз."""
     async with httpx.AsyncClient(timeout=15.0) as client:
         r = await client.post(
             f"{settings.gateway_url}/users/setlimit",
@@ -39,10 +39,10 @@ async def set_limit(telegram_id: int, daily_limit: float):
 
 
 # ----------------------------
-# Workspaces
+# Пространства
 # ----------------------------
 async def list_workspaces(telegram_id: int):
-    """Возвращает список сущностей для сценария «workspaces»."""
+    """Возвращает список пространств, доступных пользователю."""
     async with httpx.AsyncClient(timeout=15.0) as client:
         r = await client.get(
             f"{settings.gateway_url}/workspaces",
@@ -54,7 +54,7 @@ async def list_workspaces(telegram_id: int):
 
 
 async def get_active_workspace(telegram_id: int):
-    """Возвращает данные для сценария «active workspace»."""
+    """Возвращает активное пространство пользователя."""
     async with httpx.AsyncClient(timeout=15.0) as client:
         r = await client.get(
             f"{settings.gateway_url}/workspaces/active",
@@ -66,7 +66,7 @@ async def get_active_workspace(telegram_id: int):
 
 
 async def set_active_workspace(telegram_id: int, workspace_id: int):
-    """Выполняет действие «set active workspace» в рамках логики Finance Helper."""
+    """Меняет активное пространство пользователя."""
     payload = {"telegram_id": telegram_id, "workspace_id": workspace_id}
     async with httpx.AsyncClient(timeout=15.0) as client:
         r = await client.post(f"{settings.gateway_url}/workspaces/active", json=payload, headers=_headers())
@@ -80,7 +80,7 @@ async def create_workspace(
     workspace_type: str = "shared",
     base_currency: str = "RUB",
 ):
-    """Создаёт сущность для сценария «workspace»."""
+    """Создаёт новое пространство для личного или совместного бюджета."""
     payload = {
         "telegram_id": telegram_id,
         "name": name,
@@ -94,7 +94,7 @@ async def create_workspace(
 
 
 async def list_workspace_members(telegram_id: int, workspace_id: int):
-    """Возвращает список сущностей для сценария «workspace members»."""
+    """Возвращает участников выбранного пространства."""
     async with httpx.AsyncClient(timeout=15.0) as client:
         r = await client.get(
             f"{settings.gateway_url}/workspaces/{workspace_id}/members",
@@ -111,7 +111,7 @@ async def add_workspace_member(
     member_identifier: str,
     role: str = "editor",
 ):
-    """Выполняет действие «add workspace member» в рамках логики Finance Helper."""
+    """Добавляет участника в пространство по username или Telegram ID."""
     payload = {
         "telegram_id": telegram_id,
         "member_identifier": member_identifier,
@@ -128,7 +128,7 @@ async def add_workspace_member(
 
 
 async def update_workspace_member_role(telegram_id: int, workspace_id: int, member_telegram_id: int, role: str):
-    """Обновляет данные в сценарии «workspace member role»."""
+    """Меняет роль участника в пространстве."""
     payload = {"telegram_id": telegram_id, "role": role}
     async with httpx.AsyncClient(timeout=15.0) as client:
         r = await client.patch(
@@ -141,7 +141,7 @@ async def update_workspace_member_role(telegram_id: int, workspace_id: int, memb
 
 
 async def remove_workspace_member(telegram_id: int, workspace_id: int, member_telegram_id: int):
-    """Удаляет сущность в сценарии «workspace member»."""
+    """Удаляет участника из пространства."""
     async with httpx.AsyncClient(timeout=15.0) as client:
         r = await client.delete(
             f"{settings.gateway_url}/workspaces/{workspace_id}/members/{member_telegram_id}",
@@ -153,7 +153,7 @@ async def remove_workspace_member(telegram_id: int, workspace_id: int, member_te
 
 
 # ----------------------------
-# Operations
+# Операции
 # ----------------------------
 async def create_operation(
     telegram_id: int,
@@ -171,7 +171,7 @@ async def create_operation(
     receipt_upload_id: int | None = None,
     statement_import_id: int | None = None,
 ):
-    """Создаёт сущность для сценария «operation»."""
+    """Создаёт новую финансовую операцию через API-шлюз."""
     payload = {
         "telegram_id": telegram_id,
         "workspace_id": workspace_id,
@@ -206,7 +206,7 @@ async def list_operations_page(
     workspace_id: int | None = None,
     user_telegram_id: int | None = None,
 ):
-    """Возвращает список сущностей для сценария «operations page»."""
+    """Возвращает одну страницу списка операций с фильтрами."""
     params: dict[str, object] = {"telegram_id": telegram_id, "limit": limit, "offset": offset}
     if date_from:
         params["date_from"] = date_from.isoformat()
@@ -230,12 +230,12 @@ async def list_operations_page(
 
 
 async def list_operations(telegram_id: int, limit: int = 10, workspace_id: int | None = None):
-    """Возвращает список сущностей для сценария «operations»."""
+    """Возвращает последние операции пользователя."""
     return await list_operations_page(telegram_id=telegram_id, limit=limit, offset=0, workspace_id=workspace_id)
 
 
 async def delete_operation(telegram_id: int, op_id: int, workspace_id: int | None = None):
-    """Удаляет сущность в сценарии «operation»."""
+    """Удаляет выбранную операцию."""
     params: dict[str, object] = {"telegram_id": telegram_id}
     if workspace_id is not None:
         params["workspace_id"] = workspace_id
@@ -255,7 +255,7 @@ async def edit_operation(
     currency: str | None = None,
     workspace_id: int | None = None,
 ):
-    """Выполняет действие «edit operation» в рамках логики Finance Helper."""
+    """Обновляет выбранную операцию через API-шлюз."""
     payload: dict[str, object] = {"telegram_id": telegram_id}
     if workspace_id is not None:
         payload["workspace_id"] = workspace_id
@@ -276,7 +276,7 @@ async def edit_operation(
 
 
 # ----------------------------
-# Categories
+# Создаём базовые категории для демо-пользователя
 # ----------------------------
 async def list_categories(
     telegram_id: int,
@@ -284,7 +284,7 @@ async def list_categories(
     include_archived: bool = False,
     workspace_id: int | None = None,
 ):
-    """Возвращает список сущностей для сценария «categories»."""
+    """Возвращает категории выбранного пространства."""
     params: dict[str, object] = {"telegram_id": telegram_id, "include_archived": include_archived}
     if category_type:
         params["category_type"] = category_type
@@ -303,7 +303,7 @@ async def create_category(
     emoji: str | None = None,
     workspace_id: int | None = None,
 ):
-    """Создаёт сущность для сценария «category»."""
+    """Создаёт новую категорию доходов или расходов."""
     payload: dict[str, object] = {"telegram_id": telegram_id, "name": name, "type": category_type, "emoji": emoji}
     if workspace_id is not None:
         payload["workspace_id"] = workspace_id
@@ -320,7 +320,7 @@ async def update_category(
     emoji: str | None = None,
     is_archived: bool | None = None,
 ):
-    """Обновляет данные в сценарии «category»."""
+    """Обновляет название, emoji или статус категории."""
     payload: dict[str, object] = {"telegram_id": telegram_id}
     if name is not None:
         payload["name"] = name
@@ -335,7 +335,7 @@ async def update_category(
 
 
 async def list_aliases(telegram_id: int, category_id: int):
-    """Возвращает список сущностей для сценария «aliases»."""
+    """Возвращает ключевые слова, связанные с категорией."""
     async with httpx.AsyncClient(timeout=15.0) as client:
         r = await client.get(
             f"{settings.gateway_url}/categories/{category_id}/aliases",
@@ -347,7 +347,7 @@ async def list_aliases(telegram_id: int, category_id: int):
 
 
 async def create_alias(telegram_id: int, category_id: int, alias: str):
-    """Создаёт сущность для сценария «alias»."""
+    """Добавляет ключевое слово для автоподстановки категории."""
     payload = {"telegram_id": telegram_id, "alias": alias}
     async with httpx.AsyncClient(timeout=15.0) as client:
         r = await client.post(f"{settings.gateway_url}/categories/{category_id}/aliases", json=payload, headers=_headers())
@@ -356,7 +356,7 @@ async def create_alias(telegram_id: int, category_id: int, alias: str):
 
 
 async def delete_alias(telegram_id: int, alias_id: int):
-    """Удаляет сущность в сценарии «alias»."""
+    """Удаляет ключевое слово категории."""
     async with httpx.AsyncClient(timeout=15.0) as client:
         r = await client.delete(f"{settings.gateway_url}/aliases/{alias_id}", params={"telegram_id": telegram_id}, headers=_headers())
         r.raise_for_status()
@@ -364,7 +364,7 @@ async def delete_alias(telegram_id: int, alias_id: int):
 
 
 async def match_category(telegram_id: int, text: str, op_type: str, workspace_id: int | None = None):
-    """Выполняет действие «match category» в рамках логики Finance Helper."""
+    """Пытается подобрать категорию по тексту операции."""
     payload = {"telegram_id": telegram_id, "workspace_id": workspace_id, "text": text, "type": op_type}
     async with httpx.AsyncClient(timeout=15.0) as client:
         r = await client.post(f"{settings.gateway_url}/categories/match", json=payload, headers=_headers())
@@ -373,10 +373,10 @@ async def match_category(telegram_id: int, text: str, op_type: str, workspace_id
 
 
 # ----------------------------
-# Reports / analysis / exports / mini app
+# Отчёты / анализ / экспорт / Mini App
 # ----------------------------
 async def report_summary(telegram_id: int, date_from: str, date_to: str):
-    """Выполняет действие «report summary» в рамках логики Finance Helper."""
+    """Запрашивает сводный отчёт за выбранный период."""
     async with httpx.AsyncClient(timeout=15.0) as client:
         r = await client.get(
             f"{settings.gateway_url}/reports/summary",
@@ -388,7 +388,7 @@ async def report_summary(telegram_id: int, date_from: str, date_to: str):
 
 
 async def monthly_report(telegram_id: int, year: int, month: int, workspace_id: int | None = None):
-    """Выполняет действие «monthly report» в рамках логики Finance Helper."""
+    """Запрашивает структурированный ежемесячный отчёт."""
     params: dict[str, object] = {"telegram_id": telegram_id, "year": year, "month": month}
     if workspace_id is not None:
         params["workspace_id"] = workspace_id
@@ -399,7 +399,7 @@ async def monthly_report(telegram_id: int, year: int, month: int, workspace_id: 
 
 
 async def spending_analysis(telegram_id: int, year: int, month: int, workspace_id: int | None = None):
-    """Выполняет действие «spending analysis» в рамках логики Finance Helper."""
+    """Запрашивает анализ трат за месяц."""
     params: dict[str, object] = {"telegram_id": telegram_id, "year": year, "month": month}
     if workspace_id is not None:
         params["workspace_id"] = workspace_id
@@ -417,7 +417,7 @@ async def export_file(
     op_type: str | None = None,
     workspace_id: int | None = None,
 ) -> tuple[bytes, str, str]:
-    """Выполняет действие «export file» в рамках логики Finance Helper."""
+    """Скачивает файл экспорта операций в указанном формате."""
     endpoint = "/exports/csv" if fmt == "csv" else "/exports/xlsx"
     params: dict[str, object] = {"telegram_id": telegram_id}
     if date_from is not None:
@@ -439,8 +439,8 @@ async def export_file(
 
 
 async def build_miniapp_url(telegram_id: int, workspace_id: int | None = None) -> str:
-    # local generation keeps bot-service independent from an extra gateway request
-    """Собирает итоговую структуру или текст для сценария «miniapp url»."""
+    # Локальная генерация позволяет боту не делать лишний запрос в шлюз
+    """Собирает публичную ссылку для открытия Mini App с подписанным токеном."""
     token = sign_miniapp_token(
         telegram_id=telegram_id,
         secret=settings.miniapp_signing_secret,
@@ -451,7 +451,7 @@ async def build_miniapp_url(telegram_id: int, workspace_id: int | None = None) -
 
 
 async def notify_daily(telegram_id: int):
-    """Выполняет действие «notify daily» в рамках логики Finance Helper."""
+    """Запускает отправку дневной сводки пользователю."""
     async with httpx.AsyncClient(timeout=15.0) as client:
         r = await client.post(f"{settings.gateway_url}/notify/daily", params={"telegram_id": telegram_id}, headers=_headers())
         r.raise_for_status()
@@ -459,7 +459,7 @@ async def notify_daily(telegram_id: int):
 
 
 async def notify_monthly(telegram_id: int, year: int | None = None, month: int | None = None, workspace_id: int | None = None):
-    """Выполняет действие «notify monthly» в рамках логики Finance Helper."""
+    """Запускает отправку ежемесячного отчёта пользователю."""
     params: dict[str, object] = {"telegram_id": telegram_id}
     if year is not None:
         params["year"] = year
@@ -474,10 +474,10 @@ async def notify_monthly(telegram_id: int, year: int | None = None, month: int |
 
 
 # ----------------------------
-# Limits / budgets / schedules
+# Лимиты / бюджеты / расписания
 # ----------------------------
 async def list_limits(telegram_id: int, workspace_id: int | None = None):
-    """Возвращает список сущностей для сценария «limits»."""
+    """Возвращает список: лимиты."""
     params: dict[str, object] = {"telegram_id": telegram_id}
     if workspace_id is not None:
         params["workspace_id"] = workspace_id
@@ -488,7 +488,7 @@ async def list_limits(telegram_id: int, workspace_id: int | None = None):
 
 
 async def limits_overview(telegram_id: int, workspace_id: int | None = None, ref_date: date | None = None):
-    """Выполняет действие «limits overview» в рамках логики Finance Helper."""
+    """Запрашивает сводку по использованию лимитов."""
     params: dict[str, object] = {"telegram_id": telegram_id}
     if workspace_id is not None:
         params["workspace_id"] = workspace_id
@@ -510,7 +510,7 @@ async def create_budget_limit(
     user_telegram_id: int | None = None,
     category_id: int | None = None,
 ):
-    """Создаёт сущность для сценария «budget limit»."""
+    """Создаёт budget limit."""
     payload: dict[str, object] = {
         "telegram_id": telegram_id,
         "scope": scope,
@@ -534,7 +534,7 @@ async def create_budget_limit(
 
 
 async def list_report_schedules(telegram_id: int, workspace_id: int | None = None):
-    """Возвращает список сущностей для сценария «report schedules»."""
+    """Возвращает активные расписания автоматических отчётов."""
     params: dict[str, object] = {"telegram_id": telegram_id}
     if workspace_id is not None:
         params["workspace_id"] = workspace_id
@@ -553,7 +553,7 @@ async def upsert_report_schedule(
     workspace_id: int | None = None,
     user_telegram_id: int | None = None,
 ):
-    """Выполняет действие «upsert report schedule» в рамках логики Finance Helper."""
+    """Создаёт или обновляет расписание автоматического отчёта."""
     payload: dict[str, object] = {
         "telegram_id": telegram_id,
         "frequency": "monthly",
@@ -573,10 +573,10 @@ async def upsert_report_schedule(
 
 
 # ----------------------------
-# Receipts / statement imports
+# Чеки / импорт выписок
 # ----------------------------
 async def create_receipt_upload(telegram_id: int, original_filename: str | None = None, telegram_file_id: str | None = None, storage_path: str | None = None, workspace_id: int | None = None):
-    """Создаёт сущность для сценария «receipt upload»."""
+    """Создаёт запись о загруженном пользователем чеке."""
     payload = {"telegram_id": telegram_id, "workspace_id": workspace_id, "original_filename": original_filename, "telegram_file_id": telegram_file_id, "storage_path": storage_path}
     async with httpx.AsyncClient(timeout=20.0) as client:
         r = await client.post(f"{settings.gateway_url}/receipts", json=payload, headers=_headers())
@@ -585,7 +585,7 @@ async def create_receipt_upload(telegram_id: int, original_filename: str | None 
 
 
 async def parse_receipt_upload(receipt_id: int, telegram_id: int, parsed_total: float | None = None, parsed_currency: str | None = None, parsed_merchant: str | None = None, parsed_date: date | None = None, raw_text: str | None = None, error_message: str | None = None, status: str = "parsed"):
-    """Разбирает входные данные для сценария «receipt upload»."""
+    """Сохраняет результаты распознавания загруженного чека."""
     payload = {
         "telegram_id": telegram_id,
         "parsed_total": parsed_total,
@@ -603,7 +603,7 @@ async def parse_receipt_upload(receipt_id: int, telegram_id: int, parsed_total: 
 
 
 async def confirm_receipt_upload(receipt_id: int, telegram_id: int, category: str | None = None, comment: str | None = None, currency: str | None = None, amount: float | None = None, occurred_at: date | None = None):
-    """Выполняет действие «confirm receipt upload» в рамках логики Finance Helper."""
+    """Подтверждает чек и создаёт по нему операцию."""
     payload = {
         "telegram_id": telegram_id,
         "category": category,
@@ -619,7 +619,7 @@ async def confirm_receipt_upload(receipt_id: int, telegram_id: int, category: st
 
 
 async def create_statement_import_record(telegram_id: int, original_filename: str | None = None, file_type: str | None = None, summary_text: str | None = None, workspace_id: int | None = None):
-    """Создаёт сущность для сценария «statement import record»."""
+    """Создаёт statement import record."""
     payload = {"telegram_id": telegram_id, "workspace_id": workspace_id, "original_filename": original_filename, "file_type": file_type, "summary_text": summary_text}
     async with httpx.AsyncClient(timeout=20.0) as client:
         r = await client.post(f"{settings.gateway_url}/statement-imports", json=payload, headers=_headers())
@@ -628,7 +628,7 @@ async def create_statement_import_record(telegram_id: int, original_filename: st
 
 
 async def complete_statement_import(import_id: int, telegram_id: int, imported_rows: int, skipped_rows: int, summary_text: str | None = None, error_message: str | None = None, status: str = "confirmed"):
-    """Выполняет действие «complete statement import» в рамках логики Finance Helper."""
+    """Завершает импорт банковской выписки и сохраняет итоговую статистику."""
     payload = {
         "telegram_id": telegram_id,
         "imported_rows": imported_rows,

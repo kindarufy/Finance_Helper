@@ -1,4 +1,4 @@
-"""Модуль сервиса аналитики Finance Helper."""
+"""FastAPI-приложение сервиса аналитики: отчёты, анализ трат, экспорт данных и фоновые уведомления."""
 from __future__ import annotations
 
 from datetime import date, datetime, timedelta
@@ -28,7 +28,7 @@ _sent_schedule_keys: set[str] = set()
 
 @app.get("/health")
 def health():
-    """Выполняет действие «health» в рамках логики Finance Helper."""
+    """Возвращает ответ для проверки, что сервис аналитики работает."""
     return {"status": "ok"}
 
 
@@ -43,7 +43,7 @@ async def _fetch_ops(
     actor_telegram_id: int | None = None,
     search: str | None = None,
 ):
-    """Выполняет действие «fetch ops» в рамках логики Finance Helper."""
+    """Безопасно получает операции из финансового сервиса и преобразует ошибки в ответ 502."""
     try:
         return await fetch_operations(
             telegram_id,
@@ -61,7 +61,7 @@ async def _fetch_ops(
 
 
 def _previous_month(year: int | None = None, month: int | None = None) -> tuple[int, int]:
-    """Выполняет действие «previous month» в рамках логики Finance Helper."""
+    """Определяет предыдущий месяц для автогенерации ежемесячного отчёта."""
     if year is not None and month is not None:
         return year, month
     today = date.today().replace(day=1)
@@ -71,7 +71,7 @@ def _previous_month(year: int | None = None, month: int | None = None) -> tuple[
 
 @app.on_event("startup")
 async def startup_event():
-    """Выполняет действие «startup event» в рамках логики Finance Helper."""
+    """Запускает планировщик фоновой отправки ежемесячных отчётов."""
     global _scheduler
     if _scheduler is None:
         _scheduler = AsyncIOScheduler(timezone="UTC")
@@ -81,7 +81,7 @@ async def startup_event():
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    """Выполняет действие «shutdown event» в рамках логики Finance Helper."""
+    """Останавливает планировщик при завершении сервиса."""
     global _scheduler
     if _scheduler is not None:
         _scheduler.shutdown(wait=False)
@@ -89,7 +89,7 @@ async def shutdown_event():
 
 
 async def _run_due_monthly_reports_job():
-    """Выполняет действие «run due monthly reports job» в рамках логики Finance Helper."""
+    """Проверяет расписания и отправляет отчёты, срок которых наступил."""
     now = datetime.utcnow().replace(second=0, microsecond=0)
     send_time = now.strftime("%H:%M")
     try:
@@ -116,7 +116,7 @@ async def report_summary(
     date_from: date | None = Query(None),
     date_to: date | None = Query(None),
 ):
-    """Выполняет действие «report summary» в рамках логики Finance Helper."""
+    """Строит сводный отчёт по операциям за выбранный период."""
     ops = await _fetch_ops(telegram_id, workspace_id, date_from, date_to)
     return summary_report(ops)
 
@@ -128,7 +128,7 @@ async def report_monthly(
     year: int = Query(..., ge=2000, le=2100),
     month: int = Query(..., ge=1, le=12),
 ):
-    """Выполняет действие «report monthly» в рамках логики Finance Helper."""
+    """Формирует расширенный ежемесячный отчёт с сравнением с прошлым месяцем."""
     start, end = month_bounds(year, month)
     prev_year, prev_month = (year - 1, 12) if month == 1 else (year, month - 1)
     prev_start, prev_end = month_bounds(prev_year, prev_month)
@@ -144,7 +144,7 @@ async def report_monthly_text(
     year: int = Query(..., ge=2000, le=2100),
     month: int = Query(..., ge=1, le=12),
 ):
-    """Выполняет действие «report monthly text» в рамках логики Finance Helper."""
+    """Возвращает ежемесячный отчёт сразу и в виде текста, и в виде структурированных данных."""
     payload = await report_monthly(telegram_id=telegram_id, workspace_id=workspace_id, year=year, month=month)
     return {"text": render_monthly_report_text(payload), "payload": payload}
 
@@ -156,7 +156,7 @@ async def spending_analysis(
     year: int = Query(..., ge=2000, le=2100),
     month: int = Query(..., ge=1, le=12),
 ):
-    """Выполняет действие «spending analysis» в рамках логики Finance Helper."""
+    """Строит аналитический разбор расходов за месяц."""
     start, end = month_bounds(year, month)
     prev_year, prev_month = (year - 1, 12) if month == 1 else (year, month - 1)
     prev_start, prev_end = month_bounds(prev_year, prev_month)
@@ -172,7 +172,7 @@ async def miniapp_dashboard(
     workspace_id: int | None = Query(None),
     days: int = Query(30, ge=7, le=365),
 ):
-    """Выполняет действие «miniapp dashboard» в рамках логики Finance Helper."""
+    """Подготавливает данные дашборда Mini App за выбранное число дней."""
     end = date.today()
     start = end.fromordinal(end.toordinal() - days + 1)
     ops = await _fetch_ops(telegram_id, workspace_id, start, end)
@@ -186,7 +186,7 @@ async def miniapp_timeseries(
     date_from: date = Query(...),
     date_to: date = Query(...),
 ):
-    """Выполняет действие «miniapp timeseries» в рамках логики Finance Helper."""
+    """Возвращает временной ряд расходов для графика в Mini App."""
     ops = await _fetch_ops(telegram_id, workspace_id, date_from, date_to)
     return dashboard_payload(ops, days=(date_to - date_from).days + 1)["timeline"]
 
@@ -197,7 +197,7 @@ async def limits_overview(
     workspace_id: int | None = Query(None),
     ref_date: date | None = Query(None),
 ):
-    """Выполняет действие «limits overview» в рамках логики Finance Helper."""
+    """Проксирует запрос сводки по лимитам из финансового сервиса."""
     try:
         return await fetch_limit_overview(telegram_id=telegram_id, workspace_id=workspace_id, ref_date=ref_date)
     except Exception as exc:
@@ -212,7 +212,7 @@ async def export_csv(
     date_to: date | None = Query(None),
     op_type: str | None = Query(None),
 ):
-    """Выполняет действие «export csv» в рамках логики Finance Helper."""
+    """Формирует CSV-файл с выгрузкой операций."""
     ops = await _fetch_ops(telegram_id, workspace_id, date_from, date_to, op_type=op_type)
     buffer = StringIO()
     headers = [
@@ -251,7 +251,7 @@ async def export_xlsx(
     date_to: date | None = Query(None),
     op_type: str | None = Query(None),
 ):
-    """Выполняет действие «export xlsx» в рамках логики Finance Helper."""
+    """Формирует XLSX-файл с выгрузкой операций."""
     ops = await _fetch_ops(telegram_id, workspace_id, date_from, date_to, op_type=op_type)
     wb = Workbook()
     ws = wb.active
@@ -283,7 +283,7 @@ async def export_xlsx(
 
 @app.post("/notify/daily", dependencies=[Depends(require_internal_key)])
 async def notify_daily(telegram_id: int = Query(...), workspace_id: int | None = Query(None)):
-    """Выполняет действие «notify daily» в рамках логики Finance Helper."""
+    """Отправляет пользователю дневную текстовую сводку по операциям."""
     today = date.today()
     ops = await _fetch_ops(telegram_id, workspace_id, today, today)
     rep = summary_report(ops)
@@ -295,7 +295,7 @@ async def notify_daily(telegram_id: int = Query(...), workspace_id: int | None =
 
 
 async def _send_monthly_report(telegram_id: int, workspace_id: int | None, year: int | None, month: int | None) -> dict:
-    """Отправляет данные, относящиеся к сценарию «monthly report»."""
+    """Готовит и отправляет пользователю ежемесячный отчёт в Telegram."""
     year, month = _previous_month(year, month)
     payload = await report_monthly(telegram_id=telegram_id, workspace_id=workspace_id, year=year, month=month)
     text = render_monthly_report_text(payload)
@@ -310,13 +310,13 @@ async def notify_monthly(
     year: int | None = Query(None),
     month: int | None = Query(None),
 ):
-    """Выполняет действие «notify monthly» в рамках логики Finance Helper."""
+    """Ручной запуск отправки ежемесячного отчёта пользователю."""
     return await _send_monthly_report(telegram_id=telegram_id, workspace_id=workspace_id, year=year, month=month)
 
 
 @app.post("/notify/monthly/run-due", dependencies=[Depends(require_internal_key)])
 async def notify_monthly_run_due(run_date: date | None = Query(None), send_time: str | None = Query(None)):
-    """Выполняет действие «notify monthly run due» в рамках логики Finance Helper."""
+    """Запускает проверку и отправку всех ежемесячных отчётов, срок которых наступил."""
     now = datetime.utcnow().replace(second=0, microsecond=0)
     current_date = run_date or now.date()
     current_send_time = send_time or now.strftime("%H:%M")

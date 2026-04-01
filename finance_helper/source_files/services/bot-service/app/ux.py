@@ -1,4 +1,4 @@
-"""Модуль сервисного слоя Telegram-бота Finance Helper."""
+"""Тексты интерфейса Telegram-бота: приветствие, справка, примеры и подсказки."""
 from __future__ import annotations
 
 from typing import Iterable
@@ -15,7 +15,7 @@ BOT_COMMANDS: list[dict[str, str]] = [
 
 
 def _bullet_lines(items: Iterable[str]) -> str:
-    """Выполняет действие «bullet lines» в рамках логики Finance Helper."""
+    """Преобразует набор строк в маркированный список для Telegram."""
     return "\n".join(f"• {item}" for item in items)
 
 
@@ -31,7 +31,7 @@ DATE_FORMATS_TEXT = _bullet_lines(
 
 
 def welcome_text(first_name: str | None = None) -> str:
-    """Выполняет действие «welcome text» в рамках логики Finance Helper."""
+    """Формирует приветственное сообщение бота."""
     name = (first_name or "").strip()
     greet = f"Привет, {name}!" if name else "Привет!"
     return (
@@ -43,7 +43,7 @@ def welcome_text(first_name: str | None = None) -> str:
 
 
 def onboarding_text() -> str:
-    """Выполняет действие «onboarding text» в рамках логики Finance Helper."""
+    """Возвращает короткую инструкцию по первым шагам в боте."""
     return (
         "🚀 Быстрый старт\n\n"
         "1. Добавь первую операцию простым сообщением: `700 пицца` или `+30000 зарплата`.\n"
@@ -57,7 +57,7 @@ def onboarding_text() -> str:
 
 
 def examples_text() -> str:
-    """Выполняет действие «examples text» в рамках логики Finance Helper."""
+    """Возвращает примеры правильного ввода операций."""
     expense_examples = _bullet_lines(
         ["700 пицца", "1490 подписка", "2400 продукты вчера", "799 usd iphone 2026-03-28"]
     )
@@ -77,7 +77,7 @@ def examples_text() -> str:
 
 
 def help_text() -> str:
-    """Выполняет действие «help text» в рамках логики Finance Helper."""
+    """Возвращает подробную справку по возможностям бота."""
     features = _bullet_lines(
         [
             "Добавлять расходы и доходы текстом и кнопками",
@@ -113,7 +113,7 @@ def help_text() -> str:
 
 
 def pretty_commands_text() -> str:
-    """Выполняет действие «pretty commands text» в рамках логики Finance Helper."""
+    """Возвращает красивое краткое описание основных разделов бота."""
     quick_start = _bullet_lines(
         [
             "Написать `700 пицца`",
@@ -145,7 +145,7 @@ def pretty_commands_text() -> str:
 
 
 def unknown_input_text(user_text: str | None = None) -> str:
-    """Выполняет действие «unknown input text» в рамках логики Finance Helper."""
+    """Подбирает подсказку для непонятного сообщения пользователя."""
     text = (user_text or "").strip().lower()
     if any(word in text for word in ["выписк", "банк", "csv", "xlsx"]):
         return (

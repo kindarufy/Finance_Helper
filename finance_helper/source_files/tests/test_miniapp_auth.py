@@ -1,4 +1,4 @@
-"""Модуль автоматических тестов проекта Finance Helper."""
+"""Тесты подписи и проверки токенов Mini App."""
 # flake8: noqa: E402
 # pyright: reportMissingImports=false
 
@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def _load(path: Path, module_name: str):
-    """Выполняет действие «load» в рамках логики Finance Helper."""
+    """Вспомогательная функция для загрузки модуля из указанного пути."""
     spec = importlib.util.spec_from_file_location(module_name, path)
     mod = importlib.util.module_from_spec(spec)
     assert spec and spec.loader
@@ -22,7 +22,7 @@ bot_auth = _load(ROOT / "services" / "bot-service" / "app" / "miniapp_auth.py", 
 
 
 def test_miniapp_token_roundtrip_between_bot_and_gateway():
-    """Проверяет сценарий «miniapp token roundtrip between bot and gateway»."""
+    """Проверяет полный цикл подписи и проверки токена Mini App между ботом и шлюзом."""
     token = bot_auth.sign_miniapp_token(telegram_id=123456, secret="secret123", workspace_id=99, ttl_seconds=3600)
     payload = gateway_auth.verify_miniapp_token(token, "secret123")
     assert payload["telegram_id"] == 123456
@@ -30,7 +30,7 @@ def test_miniapp_token_roundtrip_between_bot_and_gateway():
 
 
 def test_gateway_signed_token_verifies():
-    """Проверяет сценарий «gateway signed token verifies»."""
+    """Проверяет, что токен, подписанный шлюзом, успешно проходит проверку."""
     token = gateway_auth.sign_miniapp_token(telegram_id=42, secret="another-secret", ttl_seconds=3600)
     payload = gateway_auth.verify_miniapp_token(token, "another-secret")
     assert payload["telegram_id"] == 42

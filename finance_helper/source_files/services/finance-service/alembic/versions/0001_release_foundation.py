@@ -1,9 +1,4 @@
-"""release foundation schema
-
-Revision ID: 0001_release_foundation
-Revises: None
-Create Date: 2026-03-30 00:00:00
-"""
+"""Миграция Alembic, которая создаёт базовую структуру таблиц релизной версии Finance Helper."""
 from __future__ import annotations
 
 from alembic import op
@@ -17,7 +12,7 @@ depends_on = None
 
 
 def upgrade() -> None:
-    """Выполняет действие «upgrade» в рамках логики Finance Helper."""
+    """Создаёт таблицы и перечисления, необходимые для релизной версии Finance Helper."""
     op.create_table(
         "users",
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
@@ -216,7 +211,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    """Выполняет действие «downgrade» в рамках логики Finance Helper."""
+    """Откатывает базовую миграцию релизной версии."""
     op.drop_index(op.f("ix_report_schedules_user_id"), table_name="report_schedules")
     op.drop_index(op.f("ix_report_schedules_workspace_id"), table_name="report_schedules")
     op.drop_table("report_schedules")

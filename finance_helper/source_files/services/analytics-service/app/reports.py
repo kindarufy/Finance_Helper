@@ -1,4 +1,4 @@
-"""Модуль сервиса аналитики Finance Helper."""
+"""Функции расчёта сводок, месячных отчётов, анализа трат и данных для Mini App."""
 from __future__ import annotations
 
 from collections import defaultdict
@@ -8,7 +8,7 @@ from typing import Any
 
 
 def _user_label(op: dict[str, Any]) -> str:
-    """Выполняет действие «user label» в рамках логики Finance Helper."""
+    """Возвращает удобное отображаемое имя пользователя для отчётов."""
     username = op.get("user_username")
     if username:
         return f"@{username}"
@@ -17,25 +17,25 @@ def _user_label(op: dict[str, Any]) -> str:
 
 
 def _normalized_comment(op: dict[str, Any]) -> str:
-    """Выполняет действие «normalized comment» в рамках логики Finance Helper."""
+    """Нормализует комментарий операции для поиска повторяющихся трат."""
     raw = str(op.get("merchant") or op.get("comment") or "").strip().lower()
     return " ".join(raw.split())
 
 
 def _month_key(op: dict[str, Any]) -> str:
-    """Выполняет действие «month key» в рамках логики Finance Helper."""
+    """Возвращает ключ месяца в формате YYYY-MM для группировок."""
     value = str(op.get("occurred_at") or "")
     return value[:7] if len(value) >= 7 else value
 
 
 def _month_length(year: int, month: int) -> int:
-    """Выполняет действие «month length» в рамках логики Finance Helper."""
+    """Возвращает количество дней в указанном месяце."""
     start, end = month_bounds(year, month)
     return (end - start).days + 1
 
 
 def _category_totals(ops: list[dict[str, Any]]) -> dict[str, float]:
-    """Выполняет действие «category totals» в рамках логики Finance Helper."""
+    """Считает суммы расходов по категориям."""
     result: dict[str, float] = defaultdict(float)
     for op in ops:
         if op.get("type") == "expense":
@@ -44,7 +44,7 @@ def _category_totals(ops: list[dict[str, Any]]) -> dict[str, float]:
 
 
 def _recurring_candidates(ops: list[dict[str, Any]], previous_ops: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Выполняет действие «recurring candidates» в рамках логики Finance Helper."""
+    """Ищет траты, похожие на регулярные повторяющиеся платежи."""
     grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for op in [*ops, *previous_ops]:
         if op.get("type") != "expense":
@@ -72,7 +72,7 @@ def _recurring_candidates(ops: list[dict[str, Any]], previous_ops: list[dict[str
 
 
 def _anomalies(expense_ops: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Выполняет действие «anomalies» в рамках логики Finance Helper."""
+    """Находит нетипично крупные расходы относительно медианы."""
     if len(expense_ops) < 3:
         return []
     amounts = sorted(float(op.get("amount") or 0) for op in expense_ops)
@@ -96,7 +96,7 @@ def _anomalies(expense_ops: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def _forecast_month_end(current_total: float, year: int, month: int, today: date | None = None) -> dict[str, float]:
-    """Выполняет действие «forecast month end» в рамках логики Finance Helper."""
+    """Оценивает, какими будут расходы к концу месяца при текущем темпе."""
     today = today or date.today()
     month_days = _month_length(year, month)
     elapsed = min(max(today.day, 1), month_days)
@@ -105,7 +105,7 @@ def _forecast_month_end(current_total: float, year: int, month: int, today: date
 
 
 def summary_report(ops: list[dict[str, Any]]) -> dict[str, Any]:
-    """Выполняет действие «summary report» в рамках логики Finance Helper."""
+    """Подсчитывает базовую сводку: доходы, расходы, баланс и распределение по категориям и дням."""
     income = 0.0
     expense = 0.0
     by_cat: dict[str, float] = defaultdict(float)
@@ -150,7 +150,7 @@ def summary_report(ops: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 def render_daily_text(date_str: str, report: dict[str, Any]) -> str:
-    """Выполняет действие «render daily text» в рамках логики Finance Helper."""
+    """Преобразует сводный дневной отчёт в текст для Telegram."""
     lines = [
         f"📊 Сводка за {date_str}",
         f"Доходы: {report['income_total']}",
@@ -168,14 +168,14 @@ def render_daily_text(date_str: str, report: dict[str, Any]) -> str:
 
 
 def month_bounds(year: int, month: int) -> tuple[date, date]:
-    """Выполняет действие «month bounds» в рамках логики Finance Helper."""
+    """Возвращает первую и последнюю дату указанного месяца."""
     first = date(year, month, 1)
     next_first = date(year + 1, 1, 1) if month == 12 else date(year, month + 1, 1)
     return first, next_first - timedelta(days=1)
 
 
 def monthly_report_payload(ops: list[dict[str, Any]], previous_ops: list[dict[str, Any]], year: int, month: int) -> dict[str, Any]:
-    """Выполняет действие «monthly report payload» в рамках логики Finance Helper."""
+    """Собирает структуру данных для ежемесячного отчёта и сравнения с прошлым месяцем."""
     current = summary_report(ops)
     previous = summary_report(previous_ops)
     from_date, to_date = month_bounds(year, month)
@@ -207,7 +207,7 @@ def monthly_report_payload(ops: list[dict[str, Any]], previous_ops: list[dict[st
 
 
 def render_monthly_report_text(payload: dict[str, Any]) -> str:
-    """Выполняет действие «render monthly report text» в рамках логики Finance Helper."""
+    """Преобразует данные ежемесячного отчёта в текст для Telegram."""
     month = int(payload["month"])
     year = int(payload["year"])
     lines = [
@@ -246,7 +246,7 @@ def spending_analysis_payload(
     month: int | None = None,
     limits: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    """Выполняет действие «spending analysis payload» в рамках логики Finance Helper."""
+    """Формирует наблюдения, рекомендации и текст AI-анализа расходов."""
     current = summary_report(ops)
     previous = summary_report(previous_ops)
     insights: list[str] = []
@@ -344,7 +344,7 @@ def spending_analysis_payload(
 
 
 def dashboard_payload(ops: list[dict[str, Any]], days: int = 30) -> dict[str, Any]:
-    """Выполняет действие «dashboard payload» в рамках логики Finance Helper."""
+    """Собирает данные дашборда Mini App: сводку, таймлайн и последние операции."""
     summary = summary_report(ops)
     today = date.today()
     start = today - timedelta(days=days - 1)

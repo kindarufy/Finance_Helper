@@ -1,4 +1,4 @@
-"""Модуль сервисного слоя Telegram-бота Finance Helper."""
+"""Точка входа Telegram-бота: регистрация команд, fallback-обработчик и запуск polling."""
 import asyncio
 
 from aiogram import Bot, F
@@ -21,7 +21,7 @@ from . import handlers_receipts  # noqa: F401
 
 @dp.message(F.text)
 async def fallback(message: Message, state: FSMContext):
-    """Выполняет действие «fallback» в рамках логики Finance Helper."""
+    """Пытается распознать обычное текстовое сообщение как операцию и, если не получается, показывает подсказку."""
     current_state = await state.get_state()
     if current_state is None:
         handled = await _create_from_natural(message, state, message.text or "")
@@ -31,7 +31,7 @@ async def fallback(message: Message, state: FSMContext):
 
 
 async def main():
-    """Запускает основной рабочий сценарий модуля."""
+    """Запускает Telegram-бота, регистрирует команды и включает polling."""
     if not settings.bot_token:
         raise RuntimeError("BOT_TOKEN пустой. Заполни его в .env")
     bot = Bot(token=settings.bot_token)

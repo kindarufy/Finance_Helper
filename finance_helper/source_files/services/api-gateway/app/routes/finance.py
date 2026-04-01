@@ -1,4 +1,4 @@
-"""Модуль маршрутов API-шлюза Finance Helper."""
+"""Маршруты API-шлюза для работы с пользователями, пространствами, категориями, операциями и лимитами."""
 from __future__ import annotations
 
 from datetime import date
@@ -14,61 +14,61 @@ router = APIRouter()
 
 @router.post("/users/upsert", dependencies=[Depends(require_internal_key)])
 async def users_upsert(payload: dict, x_api_key: str = Header(alias="X-API-Key")):
-    """Выполняет действие «users upsert» в рамках логики Finance Helper."""
+    """Проксирует создание или обновление пользователя."""
     return await proxy_json("POST", f"{settings.finance_url}/users/upsert", x_api_key, json=payload)
 
 
 @router.post("/users/setlimit", dependencies=[Depends(require_internal_key)])
 async def users_setlimit(payload: dict, x_api_key: str = Header(alias="X-API-Key")):
-    """Выполняет действие «users setlimit» в рамках логики Finance Helper."""
+    """Проксирует установку дневного лимита пользователя."""
     return await proxy_json("POST", f"{settings.finance_url}/users/setlimit", x_api_key, json=payload)
 
 
 @router.get("/workspaces", dependencies=[Depends(require_internal_key)])
 async def workspaces(telegram_id: int = Query(...), x_api_key: str = Header(alias="X-API-Key")):
-    """Выполняет действие «workspaces» в рамках логики Finance Helper."""
+    """Проксирует получение списка пространств пользователя."""
     return await proxy_json("GET", f"{settings.finance_url}/workspaces", x_api_key, params={"telegram_id": telegram_id})
 
 
 @router.get("/workspaces/active", dependencies=[Depends(require_internal_key)])
 async def get_active_workspace(telegram_id: int = Query(...), x_api_key: str = Header(alias="X-API-Key")):
-    """Возвращает данные для сценария «active workspace»."""
+    """Проксирует получение активного пространства пользователя."""
     return await proxy_json("GET", f"{settings.finance_url}/workspaces/active", x_api_key, params={"telegram_id": telegram_id})
 
 
 @router.post("/workspaces/active", dependencies=[Depends(require_internal_key)])
 async def set_active_workspace(payload: dict, x_api_key: str = Header(alias="X-API-Key")):
-    """Выполняет действие «set active workspace» в рамках логики Finance Helper."""
+    """Проксирует смену активного пространства пользователя."""
     return await proxy_json("POST", f"{settings.finance_url}/workspaces/active", x_api_key, json=payload)
 
 
 @router.post("/workspaces", dependencies=[Depends(require_internal_key)])
 async def create_workspace(payload: dict, x_api_key: str = Header(alias="X-API-Key")):
-    """Создаёт сущность для сценария «workspace»."""
+    """Проксирует создание нового пространства."""
     return await proxy_json("POST", f"{settings.finance_url}/workspaces", x_api_key, json=payload)
 
 
 @router.get("/workspaces/{workspace_id}/members", dependencies=[Depends(require_internal_key)])
 async def workspace_members(workspace_id: int, telegram_id: int = Query(...), x_api_key: str = Header(alias="X-API-Key")):
-    """Выполняет действие «workspace members» в рамках логики Finance Helper."""
+    """Проксирует получение участников пространства."""
     return await proxy_json("GET", f"{settings.finance_url}/workspaces/{workspace_id}/members", x_api_key, params={"telegram_id": telegram_id})
 
 
 @router.post("/workspaces/{workspace_id}/members", dependencies=[Depends(require_internal_key)])
 async def add_workspace_member(workspace_id: int, payload: dict, x_api_key: str = Header(alias="X-API-Key")):
-    """Выполняет действие «add workspace member» в рамках логики Finance Helper."""
+    """Проксирует добавление участника в пространство."""
     return await proxy_json("POST", f"{settings.finance_url}/workspaces/{workspace_id}/members", x_api_key, json=payload)
 
 
 @router.patch("/workspaces/{workspace_id}/members/{member_telegram_id}", dependencies=[Depends(require_internal_key)])
 async def update_workspace_member(workspace_id: int, member_telegram_id: int, payload: dict, x_api_key: str = Header(alias="X-API-Key")):
-    """Обновляет данные в сценарии «workspace member»."""
+    """Обновляет участника пространства."""
     return await proxy_json("PATCH", f"{settings.finance_url}/workspaces/{workspace_id}/members/{member_telegram_id}", x_api_key, json=payload)
 
 
 @router.delete("/workspaces/{workspace_id}/members/{member_telegram_id}", dependencies=[Depends(require_internal_key)])
 async def delete_workspace_member(workspace_id: int, member_telegram_id: int, telegram_id: int = Query(...), x_api_key: str = Header(alias="X-API-Key")):
-    """Удаляет сущность в сценарии «workspace member»."""
+    """Удаляет участника пространства."""
     return await proxy_json("DELETE", f"{settings.finance_url}/workspaces/{workspace_id}/members/{member_telegram_id}", x_api_key, params={"telegram_id": telegram_id})
 
 
@@ -80,7 +80,7 @@ async def categories(
     include_archived: bool = Query(False),
     x_api_key: str = Header(alias="X-API-Key"),
 ):
-    """Выполняет действие «categories» в рамках логики Finance Helper."""
+    """Проксирует получение категорий пространства."""
     params: dict[str, object] = {"telegram_id": telegram_id, "include_archived": include_archived}
     if workspace_id is not None:
         params["workspace_id"] = workspace_id
@@ -91,43 +91,43 @@ async def categories(
 
 @router.post("/categories", dependencies=[Depends(require_internal_key)])
 async def create_category(payload: dict, x_api_key: str = Header(alias="X-API-Key")):
-    """Создаёт сущность для сценария «category»."""
+    """Проксирует создание категории."""
     return await proxy_json("POST", f"{settings.finance_url}/categories", x_api_key, json=payload)
 
 
 @router.patch("/categories/{category_id}", dependencies=[Depends(require_internal_key)])
 async def update_category(category_id: int, payload: dict, x_api_key: str = Header(alias="X-API-Key")):
-    """Обновляет данные в сценарии «category»."""
+    """Проксирует обновление категории."""
     return await proxy_json("PATCH", f"{settings.finance_url}/categories/{category_id}", x_api_key, json=payload)
 
 
 @router.get("/categories/{category_id}/aliases", dependencies=[Depends(require_internal_key)])
 async def category_aliases(category_id: int, telegram_id: int = Query(...), x_api_key: str = Header(alias="X-API-Key")):
-    """Выполняет действие «category aliases» в рамках логики Finance Helper."""
+    """Проксирует получение ключевых слов категории."""
     return await proxy_json("GET", f"{settings.finance_url}/categories/{category_id}/aliases", x_api_key, params={"telegram_id": telegram_id})
 
 
 @router.post("/categories/{category_id}/aliases", dependencies=[Depends(require_internal_key)])
 async def create_alias(category_id: int, payload: dict, x_api_key: str = Header(alias="X-API-Key")):
-    """Создаёт сущность для сценария «alias»."""
+    """Проксирует добавление ключевого слова категории."""
     return await proxy_json("POST", f"{settings.finance_url}/categories/{category_id}/aliases", x_api_key, json=payload)
 
 
 @router.delete("/aliases/{alias_id}", dependencies=[Depends(require_internal_key)])
 async def delete_alias(alias_id: int, telegram_id: int = Query(...), x_api_key: str = Header(alias="X-API-Key")):
-    """Удаляет сущность в сценарии «alias»."""
+    """Проксирует удаление ключевого слова категории."""
     return await proxy_json("DELETE", f"{settings.finance_url}/aliases/{alias_id}", x_api_key, params={"telegram_id": telegram_id})
 
 
 @router.post("/categories/match", dependencies=[Depends(require_internal_key)])
 async def match_category(payload: dict, x_api_key: str = Header(alias="X-API-Key")):
-    """Выполняет действие «match category» в рамках логики Finance Helper."""
+    """Проксирует подбор категории по тексту операции."""
     return await proxy_json("POST", f"{settings.finance_url}/categories/match", x_api_key, json=payload)
 
 
 @router.post("/operations", dependencies=[Depends(require_internal_key)])
 async def operations_create(payload: dict, x_api_key: str = Header(alias="X-API-Key")):
-    """Выполняет действие «operations create» в рамках логики Finance Helper."""
+    """Проксирует создание операции."""
     return await proxy_json("POST", f"{settings.finance_url}/operations", x_api_key, json=payload)
 
 
@@ -147,7 +147,7 @@ async def operations_list(
     search: str | None = Query(None),
     x_api_key: str = Header(alias="X-API-Key"),
 ):
-    """Выполняет действие «operations list» в рамках логики Finance Helper."""
+    """Проксирует получение списка операций с фильтрами и пагинацией."""
     params: dict[str, object] = {"telegram_id": telegram_id, "limit": limit, "offset": offset}
     if workspace_id is not None:
         params["workspace_id"] = workspace_id
@@ -172,13 +172,13 @@ async def operations_list(
 
 @router.patch("/operations/{op_id}", dependencies=[Depends(require_internal_key)])
 async def operations_update(op_id: int, payload: dict, x_api_key: str = Header(alias="X-API-Key")):
-    """Выполняет действие «operations update» в рамках логики Finance Helper."""
+    """Проксирует обновление операции."""
     return await proxy_json("PATCH", f"{settings.finance_url}/operations/{op_id}", x_api_key, json=payload)
 
 
 @router.delete("/operations/{op_id}", dependencies=[Depends(require_internal_key)])
 async def operations_delete(op_id: int, telegram_id: int = Query(...), workspace_id: int | None = Query(None), x_api_key: str = Header(alias="X-API-Key")):
-    """Выполняет действие «operations delete» в рамках логики Finance Helper."""
+    """Проксирует удаление операции."""
     params: dict[str, object] = {"telegram_id": telegram_id}
     if workspace_id is not None:
         params["workspace_id"] = workspace_id
@@ -187,7 +187,7 @@ async def operations_delete(op_id: int, telegram_id: int = Query(...), workspace
 
 @router.get("/limits", dependencies=[Depends(require_internal_key)])
 async def limits(telegram_id: int = Query(...), workspace_id: int | None = Query(None), x_api_key: str = Header(alias="X-API-Key")):
-    """Выполняет действие «limits» в рамках логики Finance Helper."""
+    """Проксирует получение списка лимитов."""
     params: dict[str, object] = {"telegram_id": telegram_id}
     if workspace_id is not None:
         params["workspace_id"] = workspace_id
@@ -196,7 +196,7 @@ async def limits(telegram_id: int = Query(...), workspace_id: int | None = Query
 
 @router.get("/limits/overview", dependencies=[Depends(require_internal_key)])
 async def limits_overview(telegram_id: int = Query(...), workspace_id: int | None = Query(None), x_api_key: str = Header(alias="X-API-Key")):
-    """Выполняет действие «limits overview» в рамках логики Finance Helper."""
+    """Проксирует получение сводки по лимитам."""
     params: dict[str, object] = {"telegram_id": telegram_id}
     if workspace_id is not None:
         params["workspace_id"] = workspace_id
@@ -205,13 +205,13 @@ async def limits_overview(telegram_id: int = Query(...), workspace_id: int | Non
 
 @router.post("/limits", dependencies=[Depends(require_internal_key)])
 async def create_limit(payload: dict, x_api_key: str = Header(alias="X-API-Key")):
-    """Создаёт сущность для сценария «limit»."""
+    """Проксирует создание бюджетного лимита."""
     return await proxy_json("POST", f"{settings.finance_url}/limits", x_api_key, json=payload)
 
 
 @router.get("/report-schedules", dependencies=[Depends(require_internal_key)])
 async def report_schedules(telegram_id: int = Query(...), workspace_id: int | None = Query(None), x_api_key: str = Header(alias="X-API-Key")):
-    """Выполняет действие «report schedules» в рамках логики Finance Helper."""
+    """Проксирует получение расписаний отчётов."""
     params: dict[str, object] = {"telegram_id": telegram_id}
     if workspace_id is not None:
         params["workspace_id"] = workspace_id
@@ -220,41 +220,41 @@ async def report_schedules(telegram_id: int = Query(...), workspace_id: int | No
 
 @router.post("/report-schedules", dependencies=[Depends(require_internal_key)])
 async def create_report_schedule(payload: dict, x_api_key: str = Header(alias="X-API-Key")):
-    """Создаёт сущность для сценария «report schedule»."""
+    """Проксирует создание расписания отчёта."""
     return await proxy_json("POST", f"{settings.finance_url}/report-schedules", x_api_key, json=payload)
 
 
 @router.get("/report-schedules/due", dependencies=[Depends(require_internal_key)])
 async def due_report_schedules(run_date: date = Query(...), send_time: str = Query(...), x_api_key: str = Header(alias="X-API-Key")):
-    """Выполняет действие «due report schedules» в рамках логики Finance Helper."""
+    """Проксирует получение расписаний отчётов, готовых к отправке."""
     return await proxy_json("GET", f"{settings.finance_url}/report-schedules/due", x_api_key, params={"run_date": run_date.isoformat(), "send_time": send_time})
 
 
 @router.post("/receipts", dependencies=[Depends(require_internal_key)])
 async def create_receipt(payload: dict, x_api_key: str = Header(alias="X-API-Key")):
-    """Создаёт сущность для сценария «receipt»."""
+    """Проксирует создание записи о загруженном чеке."""
     return await proxy_json("POST", f"{settings.finance_url}/receipts", x_api_key, json=payload)
 
 
 @router.post("/receipts/{receipt_id}/parse", dependencies=[Depends(require_internal_key)])
 async def parse_receipt(receipt_id: int, payload: dict, x_api_key: str = Header(alias="X-API-Key")):
-    """Разбирает входные данные для сценария «receipt»."""
+    """Проксирует сохранение результата распознавания чека."""
     return await proxy_json("POST", f"{settings.finance_url}/receipts/{receipt_id}/parse", x_api_key, json=payload)
 
 
 @router.post("/receipts/{receipt_id}/confirm", dependencies=[Depends(require_internal_key)])
 async def confirm_receipt(receipt_id: int, payload: dict, x_api_key: str = Header(alias="X-API-Key")):
-    """Выполняет действие «confirm receipt» в рамках логики Finance Helper."""
+    """Проксирует подтверждение чека и создание операции."""
     return await proxy_json("POST", f"{settings.finance_url}/receipts/{receipt_id}/confirm", x_api_key, json=payload)
 
 
 @router.post("/statement-imports", dependencies=[Depends(require_internal_key)])
 async def create_statement_import(payload: dict, x_api_key: str = Header(alias="X-API-Key")):
-    """Создаёт сущность для сценария «statement import»."""
+    """Проксирует создание записи импорта банковской выписки."""
     return await proxy_json("POST", f"{settings.finance_url}/statement-imports", x_api_key, json=payload)
 
 
 @router.post("/statement-imports/{import_id}/complete", dependencies=[Depends(require_internal_key)])
 async def complete_statement_import(import_id: int, payload: dict, x_api_key: str = Header(alias="X-API-Key")):
-    """Выполняет действие «complete statement import» в рамках логики Finance Helper."""
+    """Проксирует завершение импорта банковской выписки."""
     return await proxy_json("POST", f"{settings.finance_url}/statement-imports/{import_id}/complete", x_api_key, json=payload)

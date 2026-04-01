@@ -1,4 +1,4 @@
-"""Модуль финансового сервиса Finance Helper."""
+"""ORM-модели и перечисления финансового сервиса Finance Helper."""
 from __future__ import annotations
 
 from enum import Enum
@@ -23,13 +23,13 @@ from .db import Base
 
 
 class OperationType(str, Enum):
-    """Класс «OperationType» описывает состояние или структуру данных данного модуля."""
+    """Перечисление допустимых типов финансовой операции: доход или расход."""
     income = "income"
     expense = "expense"
 
 
 class WorkspaceType(str, Enum):
-    """Класс «WorkspaceType» описывает состояние или структуру данных данного модуля."""
+    """Перечисление типов пространства: личное, совместное, поездка или проект."""
     personal = "personal"
     shared = "shared"
     trip = "trip"
@@ -37,27 +37,27 @@ class WorkspaceType(str, Enum):
 
 
 class MemberRole(str, Enum):
-    """Класс «MemberRole» описывает состояние или структуру данных данного модуля."""
+    """Роли участника в совместном пространстве."""
     owner = "owner"
     editor = "editor"
     viewer = "viewer"
 
 
 class LimitPeriod(str, Enum):
-    """Класс «LimitPeriod» описывает состояние или структуру данных данного модуля."""
+    """Период действия лимита: день или месяц."""
     daily = "daily"
     monthly = "monthly"
 
 
 class LimitScope(str, Enum):
-    """Класс «LimitScope» описывает состояние или структуру данных данного модуля."""
+    """Область действия лимита: всё пространство, конкретный участник или категория."""
     workspace = "workspace"
     user = "user"
     category = "category"
 
 
 class ImportStatus(str, Enum):
-    """Класс «ImportStatus» описывает состояние или структуру данных данного модуля."""
+    """Статусы обработки чека или банковской выписки."""
     uploaded = "uploaded"
     parsed = "parsed"
     confirmed = "confirmed"
@@ -65,7 +65,7 @@ class ImportStatus(str, Enum):
 
 
 class User(Base):
-    """Класс «User» описывает состояние или структуру данных данного модуля."""
+    """ORM-модель пользователя Finance Helper."""
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -102,7 +102,7 @@ class User(Base):
 
 
 class Workspace(Base):
-    """Класс «Workspace» описывает состояние или структуру данных данного модуля."""
+    """ORM-модель пространства, в котором ведутся операции и бюджеты."""
     __tablename__ = "workspaces"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -137,7 +137,7 @@ class Workspace(Base):
 
 
 class WorkspaceMember(Base):
-    """Класс «WorkspaceMember» описывает состояние или структуру данных данного модуля."""
+    """ORM-модель участника совместного пространства."""
     __tablename__ = "workspace_members"
     __table_args__ = (UniqueConstraint("workspace_id", "user_id", name="uq_workspace_member"),)
 
@@ -156,7 +156,7 @@ class WorkspaceMember(Base):
 
 
 class Category(Base):
-    """Класс «Category» описывает состояние или структуру данных данного модуля."""
+    """ORM-модель категории доходов или расходов внутри пространства."""
     __tablename__ = "categories"
     __table_args__ = (UniqueConstraint("workspace_id", "type", "name", name="uq_workspace_category_name"),)
 
@@ -180,7 +180,7 @@ class Category(Base):
 
 
 class CategoryAlias(Base):
-    """Класс «CategoryAlias» описывает состояние или структуру данных данного модуля."""
+    """ORM-модель ключевого слова, по которому категория подбирается автоматически."""
     __tablename__ = "category_aliases"
     __table_args__ = (UniqueConstraint("workspace_id", "normalized_alias", name="uq_workspace_alias"),)
 
@@ -195,7 +195,7 @@ class CategoryAlias(Base):
 
 
 class ReceiptUpload(Base):
-    """Класс «ReceiptUpload» описывает состояние или структуру данных данного модуля."""
+    """ORM-модель загруженного чека и результатов его распознавания."""
     __tablename__ = "receipt_uploads"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -222,7 +222,7 @@ class ReceiptUpload(Base):
 
 
 class StatementImport(Base):
-    """Класс «StatementImport» описывает состояние или структуру данных данного модуля."""
+    """ORM-модель импорта банковской выписки."""
     __tablename__ = "statement_imports"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -247,7 +247,7 @@ class StatementImport(Base):
 
 
 class Operation(Base):
-    """Класс «Operation» описывает состояние или структуру данных данного модуля."""
+    """ORM-модель финансовой операции пользователя или пространства."""
     __tablename__ = "operations"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -282,7 +282,7 @@ class Operation(Base):
 
 
 class BudgetLimit(Base):
-    """Класс «BudgetLimit» описывает состояние или структуру данных данного модуля."""
+    """ORM-модель бюджетного лимита."""
     __tablename__ = "budget_limits"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -310,7 +310,7 @@ class BudgetLimit(Base):
 
 
 class ReportSchedule(Base):
-    """Класс «ReportSchedule» описывает состояние или структуру данных данного модуля."""
+    """ORM-модель расписания автоматической отправки отчётов."""
     __tablename__ = "report_schedules"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)

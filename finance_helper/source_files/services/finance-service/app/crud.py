@@ -1,4 +1,4 @@
-"""Модуль финансового сервиса Finance Helper."""
+"""Основная бизнес-логика финансового сервиса: пользователи, пространства, категории, операции, лимиты, чеки и выписки."""
 from __future__ import annotations
 
 from datetime import date, timedelta
@@ -28,17 +28,17 @@ DEFAULT_INCOME_CATEGORIES = [
 
 
 def _normalize_alias(value: str) -> str:
-    """Выполняет действие «normalize alias» в рамках логики Finance Helper."""
+    """Нормализует текст алиаса для хранения и поиска."""
     return " ".join(value.lower().strip().split())
 
 
 def get_user(db: Session, telegram_id: int) -> models.User | None:
-    """Возвращает данные для сценария «user»."""
+    """Возвращает пользователя."""
     return db.scalar(select(models.User).where(models.User.telegram_id == telegram_id))
 
 
 def _get_user_or_raise(db: Session, telegram_id: int) -> models.User:
-    """Выполняет действие «get user or raise» в рамках логики Finance Helper."""
+    """Возвращает пользователя по Telegram ID или вызывает ошибку, если запись не найдена."""
     user = get_user(db, telegram_id)
     if not user:
         raise ValueError("user_not_found")
@@ -46,7 +46,7 @@ def _get_user_or_raise(db: Session, telegram_id: int) -> models.User:
 
 
 def _get_personal_workspace(db: Session, user_id: int) -> models.Workspace | None:
-    """Выполняет действие «get personal workspace» в рамках логики Finance Helper."""
+    """Возвращает личное пространство пользователя, если оно уже существует."""
     return db.scalar(
         select(models.Workspace)
         .where(models.Workspace.owner_user_id == user_id, models.Workspace.type == models.WorkspaceType.personal)
@@ -55,7 +55,7 @@ def _get_personal_workspace(db: Session, user_id: int) -> models.Workspace | Non
 
 
 def _seed_default_categories(db: Session, workspace: models.Workspace, created_by_user_id: int) -> None:
-    """Выполняет действие «seed default categories» в рамках логики Finance Helper."""
+    """Создаёт набор базовых категорий для нового пространства."""
     for name, emoji, aliases in DEFAULT_EXPENSE_CATEGORIES:
         category = models.Category(
             workspace_id=workspace.id,
@@ -98,7 +98,7 @@ def _seed_default_categories(db: Session, workspace: models.Workspace, created_b
 
 
 def _ensure_personal_workspace(db: Session, user: models.User) -> models.Workspace:
-    """Выполняет действие «ensure personal workspace» в рамках логики Finance Helper."""
+    """Гарантирует, что у пользователя есть личное пространство и базовые категории."""
     workspace = _get_personal_workspace(db, user.id)
     if workspace:
         if user.active_workspace_id is None:
@@ -125,7 +125,7 @@ def _ensure_personal_workspace(db: Session, user: models.User) -> models.Workspa
 
 
 def upsert_user(db: Session, telegram_id: int, username: str | None) -> models.User:
-    """Выполняет действие «upsert user» в рамках логики Finance Helper."""
+    """Создаёт или обновляет пользователя."""
     user = get_user(db, telegram_id)
     if user:
         if username:
@@ -149,7 +149,7 @@ def upsert_user(db: Session, telegram_id: int, username: str | None) -> models.U
 
 
 def get_user_by_username(db: Session, username: str) -> models.User | None:
-    """Возвращает данные для сценария «user by username»."""
+    """Возвращает пользователя по username."""
     normalized = username.strip().lstrip("@").lower()
     if not normalized:
         return None
@@ -159,7 +159,7 @@ def get_user_by_username(db: Session, username: str) -> models.User | None:
 
 
 def resolve_user_by_identifier(db: Session, identifier: str) -> models.User:
-    """Выполняет действие «resolve user by identifier» в рамках логики Finance Helper."""
+    """Находит пользователя по username или Telegram ID."""
     value = identifier.strip()
     if not value:
         raise ValueError("member_identifier_invalid")
@@ -181,7 +181,7 @@ def resolve_user_by_identifier(db: Session, identifier: str) -> models.User:
 
 
 def _membership_for_user(db: Session, workspace_id: int, user_id: int) -> models.WorkspaceMember | None:
-    """Выполняет действие «membership for user» в рамках логики Finance Helper."""
+    """Возвращает участие пользователя в указанном пространстве."""
     return db.scalar(
         select(models.WorkspaceMember).where(
             models.WorkspaceMember.workspace_id == workspace_id,
@@ -196,7 +196,7 @@ def resolve_workspace_for_user(
     workspace_id: int | None,
     require_write: bool = False,
 ) -> tuple[models.User, models.Workspace, models.WorkspaceMember]:
-    """Выполняет действие «resolve workspace for user» в рамках логики Finance Helper."""
+    """Проверяет доступ пользователя к пространству и возвращает его."""
     user = _get_user_or_raise(db, telegram_id)
     if workspace_id is None:
         active_id = user.active_workspace_id
@@ -221,7 +221,7 @@ def resolve_workspace_for_user(
 
 
 def list_workspaces(db: Session, telegram_id: int) -> list[models.Workspace]:
-    """Возвращает список сущностей для сценария «workspaces»."""
+    """Возвращает список: пространства пользователя."""
     user = _get_user_or_raise(db, telegram_id)
     stmt = (
         select(models.Workspace)
@@ -234,7 +234,7 @@ def list_workspaces(db: Session, telegram_id: int) -> list[models.Workspace]:
 
 
 def get_active_workspace(db: Session, telegram_id: int) -> models.Workspace:
-    """Возвращает данные для сценария «active workspace»."""
+    """Возвращает активное пространство пользователя."""
     user = _get_user_or_raise(db, telegram_id)
     workspace = db.get(models.Workspace, user.active_workspace_id) if user.active_workspace_id else None
     if workspace and _membership_for_user(db, workspace.id, user.id):
@@ -247,7 +247,7 @@ def get_active_workspace(db: Session, telegram_id: int) -> models.Workspace:
 
 
 def set_active_workspace(db: Session, telegram_id: int, workspace_id: int) -> models.Workspace:
-    """Выполняет действие «set active workspace» в рамках логики Finance Helper."""
+    """Устанавливает активное пространство пользователя."""
     user, workspace, _ = resolve_workspace_for_user(db, telegram_id, workspace_id)
     user.active_workspace_id = workspace.id
     db.commit()
@@ -262,7 +262,7 @@ def create_workspace(
     workspace_type: models.WorkspaceType,
     base_currency: str,
 ) -> models.Workspace:
-    """Создаёт сущность для сценария «workspace»."""
+    """Создаёт пространство."""
     owner = _get_user_or_raise(db, telegram_id)
     workspace = models.Workspace(
         owner_user_id=owner.id,
@@ -287,7 +287,7 @@ def add_workspace_member(
     member_telegram_id: int,
     role: models.MemberRole,
 ) -> models.WorkspaceMember:
-    """Выполняет действие «add workspace member» в рамках логики Finance Helper."""
+    """Добавляет участника пространства."""
     _, workspace, membership = resolve_workspace_for_user(db, owner_telegram_id, workspace_id, require_write=True)
     if membership.role != models.MemberRole.owner:
         raise ValueError("owner_required")
@@ -308,7 +308,7 @@ def add_workspace_member(
 
 
 def list_workspace_members(db: Session, telegram_id: int, workspace_id: int) -> list[models.WorkspaceMember]:
-    """Возвращает список сущностей для сценария «workspace members»."""
+    """Возвращает список: участников пространства."""
     resolve_workspace_for_user(db, telegram_id, workspace_id)
     stmt = (
         select(models.WorkspaceMember)
@@ -325,7 +325,7 @@ def update_workspace_member_role(
     member_telegram_id: int,
     role: models.MemberRole,
 ) -> models.WorkspaceMember:
-    """Обновляет данные в сценарии «workspace member role»."""
+    """Обновляет роль участника пространства."""
     owner, workspace, membership = resolve_workspace_for_user(db, owner_telegram_id, workspace_id, require_write=True)
     if membership.role != models.MemberRole.owner:
         raise ValueError('owner_required')
@@ -347,7 +347,7 @@ def remove_workspace_member(
     owner_telegram_id: int,
     member_telegram_id: int,
 ) -> bool:
-    """Удаляет сущность в сценарии «workspace member»."""
+    """Удаляет участника пространства."""
     owner, workspace, membership = resolve_workspace_for_user(db, owner_telegram_id, workspace_id, require_write=True)
     if membership.role != models.MemberRole.owner:
         raise ValueError('owner_required')
@@ -362,7 +362,7 @@ def remove_workspace_member(
     return True
 
 
-# ---------- categories ----------
+# ---------- категории ----------
 
 
 def list_categories(
@@ -372,7 +372,7 @@ def list_categories(
     category_type: models.OperationType | None = None,
     include_archived: bool = False,
 ) -> list[models.Category]:
-    """Возвращает список сущностей для сценария «categories»."""
+    """Возвращает список: категории."""
     _, workspace, _ = resolve_workspace_for_user(db, telegram_id, workspace_id)
     stmt = select(models.Category).where(models.Category.workspace_id == workspace.id)
     if category_type:
@@ -389,7 +389,7 @@ def _get_category_by_name(
     category_name: str,
     category_type: models.OperationType,
 ) -> models.Category | None:
-    """Выполняет действие «get category by name» в рамках логики Finance Helper."""
+    """Ищет категорию по названию в пределах пространства."""
     return db.scalar(
         select(models.Category).where(
             models.Category.workspace_id == workspace_id,
@@ -407,7 +407,7 @@ def create_category(
     category_type: models.OperationType,
     emoji: str | None,
 ) -> models.Category:
-    """Создаёт сущность для сценария «category»."""
+    """Создаёт категорию."""
     user, workspace, _ = resolve_workspace_for_user(db, telegram_id, workspace_id, require_write=True)
     existing = _get_category_by_name(db, workspace.id, name, category_type)
     if existing:
@@ -438,7 +438,7 @@ def update_category(
     emoji: str | None,
     is_archived: bool | None,
 ) -> models.Category:
-    """Обновляет данные в сценарии «category»."""
+    """Обновляет категорию."""
     category = _get_category_or_raise(db, category_id)
     _, workspace, _ = resolve_workspace_for_user(db, telegram_id, category.workspace_id, require_write=True)
     if category.workspace_id != workspace.id:
@@ -465,7 +465,7 @@ def get_or_create_category(
     name: str,
     category_type: models.OperationType,
 ) -> models.Category:
-    """Возвращает данные для сценария «or create category»."""
+    """Возвращает существующую категорию или создаёт новую."""
     existing = _get_category_by_name(db, workspace_id, name, category_type)
     if existing:
         return existing
@@ -482,7 +482,7 @@ def get_or_create_category(
 
 
 def _get_category_or_raise(db: Session, category_id: int) -> models.Category:
-    """Выполняет действие «get category or raise» в рамках логики Finance Helper."""
+    """Возвращает категорию по идентификатору или вызывает ошибку."""
     category = db.get(models.Category, category_id)
     if not category:
         raise ValueError("category_not_found")
@@ -490,7 +490,7 @@ def _get_category_or_raise(db: Session, category_id: int) -> models.Category:
 
 
 def create_alias(db: Session, telegram_id: int, category_id: int, alias: str) -> models.CategoryAlias:
-    """Создаёт сущность для сценария «alias»."""
+    """Создаёт ключевое слово категории."""
     _, workspace, _ = resolve_workspace_for_user(
         db,
         telegram_id,
@@ -524,7 +524,7 @@ def create_alias(db: Session, telegram_id: int, category_id: int, alias: str) ->
 
 
 def list_aliases(db: Session, telegram_id: int, category_id: int) -> list[models.CategoryAlias]:
-    """Возвращает список сущностей для сценария «aliases»."""
+    """Возвращает список: ключевые слова категорий."""
     category = _get_category_or_raise(db, category_id)
     resolve_workspace_for_user(db, telegram_id, category.workspace_id)
     stmt = select(models.CategoryAlias).where(models.CategoryAlias.category_id == category_id).order_by(models.CategoryAlias.alias.asc())
@@ -532,7 +532,7 @@ def list_aliases(db: Session, telegram_id: int, category_id: int) -> list[models
 
 
 def delete_alias(db: Session, telegram_id: int, alias_id: int) -> bool:
-    """Удаляет сущность в сценарии «alias»."""
+    """Удаляет ключевое слово категории."""
     alias = db.get(models.CategoryAlias, alias_id)
     if not alias:
         return False
@@ -549,7 +549,7 @@ def match_category(
     text: str,
     category_type: models.OperationType,
 ) -> models.Category | None:
-    """Выполняет действие «match category» в рамках логики Finance Helper."""
+    """Подбирает категорию по тексту операции и алиасам."""
     _, workspace, _ = resolve_workspace_for_user(db, telegram_id, workspace_id)
     normalized = _normalize_alias(text)
 
@@ -587,11 +587,11 @@ def match_category(
     return None
 
 
-# ---------- limits / reports / uploads ----------
+# ---------- лимиты / отчёты / загрузки ----------
 
 
 def set_daily_limit(db: Session, telegram_id: int, daily_limit: float) -> models.User:
-    """Выполняет действие «set daily limit» в рамках логики Finance Helper."""
+    """Устанавливает дневной лимит пользователя."""
     user = _get_user_or_raise(db, telegram_id)
     workspace = _ensure_personal_workspace(db, user)
     user.daily_limit = daily_limit
@@ -639,7 +639,7 @@ def create_or_update_budget_limit(
     notify_at_80: bool,
     notify_at_100: bool,
 ) -> models.BudgetLimit:
-    """Создаёт сущность для сценария «or update budget limit»."""
+    """Создаёт новый лимит или обновляет уже существующий."""
     _, workspace, _ = resolve_workspace_for_user(db, telegram_id, workspace_id, require_write=True)
 
     target_user_id: int | None = None
@@ -692,7 +692,7 @@ def create_or_update_budget_limit(
 
 
 def list_budget_limits(db: Session, telegram_id: int, workspace_id: int | None) -> list[models.BudgetLimit]:
-    """Возвращает список сущностей для сценария «budget limits»."""
+    """Возвращает список: бюджетные лимиты."""
     _, workspace, _ = resolve_workspace_for_user(db, telegram_id, workspace_id)
     stmt = (
         select(models.BudgetLimit)
@@ -713,7 +713,7 @@ def upsert_report_schedule(
     timezone: str,
     enabled: bool,
 ) -> models.ReportSchedule:
-    """Выполняет действие «upsert report schedule» в рамках логики Finance Helper."""
+    """Создаёт расписание отчёта или обновляет существующее."""
     _, workspace, _ = resolve_workspace_for_user(db, telegram_id, workspace_id, require_write=True)
 
     target_user_id = None
@@ -752,7 +752,7 @@ def upsert_report_schedule(
 
 
 def list_report_schedules(db: Session, telegram_id: int, workspace_id: int | None) -> list[models.ReportSchedule]:
-    """Возвращает список сущностей для сценария «report schedules»."""
+    """Возвращает список: расписания отчётов."""
     _, workspace, _ = resolve_workspace_for_user(db, telegram_id, workspace_id)
     stmt = select(models.ReportSchedule).where(models.ReportSchedule.workspace_id == workspace.id).order_by(models.ReportSchedule.id.asc())
     return db.scalars(stmt).all()
@@ -766,7 +766,7 @@ def create_receipt_upload(
     telegram_file_id: str | None,
     storage_path: str | None,
 ) -> models.ReceiptUpload:
-    """Создаёт сущность для сценария «receipt upload»."""
+    """Создаёт запись о загруженном чеке."""
     user, workspace, _ = resolve_workspace_for_user(db, telegram_id, workspace_id, require_write=True)
     obj = models.ReceiptUpload(
         workspace_id=workspace.id,
@@ -789,7 +789,7 @@ def create_statement_import(
     file_type: str | None,
     summary_text: str | None,
 ) -> models.StatementImport:
-    """Создаёт сущность для сценария «statement import»."""
+    """Создаёт запись о загрузке банковской выписки."""
     user, workspace, _ = resolve_workspace_for_user(db, telegram_id, workspace_id, require_write=True)
     obj = models.StatementImport(
         workspace_id=workspace.id,
@@ -805,7 +805,7 @@ def create_statement_import(
 
 
 def get_receipt_upload(db: Session, telegram_id: int, receipt_id: int) -> models.ReceiptUpload:
-    """Возвращает данные для сценария «receipt upload»."""
+    """Возвращает запись о загруженном чеке."""
     user = _get_user_or_raise(db, telegram_id)
     obj = db.scalar(select(models.ReceiptUpload).where(models.ReceiptUpload.id == receipt_id))
     if not obj:
@@ -828,7 +828,7 @@ def update_receipt_upload(
     error_message: str | None,
     status: models.ImportStatus,
 ) -> models.ReceiptUpload:
-    """Обновляет данные в сценарии «receipt upload»."""
+    """Обновляет данные распознавания загруженного чека."""
     obj = get_receipt_upload(db, telegram_id, receipt_id)
     requester = _get_user_or_raise(db, telegram_id)
     membership = _membership_for_user(db, obj.workspace_id, requester.id)
@@ -856,7 +856,7 @@ def finalize_statement_import(
     error_message: str | None,
     status: models.ImportStatus,
 ) -> models.StatementImport:
-    """Выполняет действие «finalize statement import» в рамках логики Finance Helper."""
+    """Завершает импорт банковской выписки и сохраняет итоговый статус."""
     user = _get_user_or_raise(db, telegram_id)
     obj = db.scalar(select(models.StatementImport).where(models.StatementImport.id == import_id))
     if not obj:
@@ -876,7 +876,7 @@ def finalize_statement_import(
     return obj
 
 
-# ---------- operations ----------
+# ---------- операции ----------
 
 
 def create_operation(
@@ -898,7 +898,7 @@ def create_operation(
     receipt_upload_id: int | None = None,
     statement_import_id: int | None = None,
 ) -> models.Operation:
-    """Создаёт сущность для сценария «operation»."""
+    """Создаёт операцию."""
     requester, workspace, _ = resolve_workspace_for_user(db, telegram_id, workspace_id, require_write=True)
 
     subject_user = requester if user_telegram_id is None else _get_user_or_raise(db, user_telegram_id)
@@ -957,7 +957,7 @@ def confirm_receipt_upload(
     amount: float | None,
     occurred_at: date | None,
 ) -> models.Operation:
-    """Выполняет действие «confirm receipt upload» в рамках логики Finance Helper."""
+    """Подтверждает чек и создаёт по нему финансовую операцию."""
     receipt = get_receipt_upload(db, telegram_id, receipt_id)
     final_amount = float(amount if amount is not None else (receipt.parsed_total or 0))
     if final_amount <= 0:
@@ -1002,7 +1002,7 @@ def list_operations(
     actor_telegram_id: int | None = None,
     search: str | None = None,
 ):
-    """Возвращает список сущностей для сценария «operations»."""
+    """Возвращает список: операции."""
     _, workspace, _ = resolve_workspace_for_user(db, telegram_id, workspace_id)
 
     subject_user = aliased(models.User)
@@ -1054,7 +1054,7 @@ def update_operation(
     category: str | None,
     occurred_at: date | None,
 ) -> models.Operation:
-    """Обновляет данные в сценарии «operation»."""
+    """Обновляет операцию."""
     requester = _get_user_or_raise(db, telegram_id)
     op = db.scalar(select(models.Operation).where(models.Operation.id == op_id))
     if not op:
@@ -1084,7 +1084,7 @@ def update_operation(
 
 
 def delete_operation(db: Session, telegram_id: int, op_id: int) -> bool:
-    """Удаляет сущность в сценарии «operation»."""
+    """Удаляет операцию."""
     requester = _get_user_or_raise(db, telegram_id)
     op = db.scalar(select(models.Operation).where(models.Operation.id == op_id))
     if not op:
@@ -1102,7 +1102,7 @@ def delete_operation(db: Session, telegram_id: int, op_id: int) -> bool:
 
 
 def daily_expense_total(db: Session, telegram_id: int, day: date, workspace_id: int | None = None) -> tuple[float, models.User]:
-    """Выполняет действие «daily expense total» в рамках логики Finance Helper."""
+    """Считает сумму расходов пользователя за выбранный день."""
     user, workspace, _ = resolve_workspace_for_user(db, telegram_id, workspace_id)
     total = db.scalar(
         select(func.coalesce(func.sum(models.Operation.amount), 0)).where(
@@ -1115,11 +1115,11 @@ def daily_expense_total(db: Session, telegram_id: int, day: date, workspace_id: 
     return float(total or 0), user
 
 
-# ---------- stage 6/7 helpers ----------
+# ---------- вспомогательные функции для этапов 6/7 ----------
 
 
 def _period_bounds(period: models.LimitPeriod, day: date) -> tuple[date, date]:
-    """Выполняет действие «period bounds» в рамках логики Finance Helper."""
+    """Возвращает границы периода для лимита."""
     if period == models.LimitPeriod.daily:
         return day, day
     month_start = day.replace(day=1)
@@ -1132,7 +1132,7 @@ def _period_bounds(period: models.LimitPeriod, day: date) -> tuple[date, date]:
 
 
 def _limit_label(db: Session, limit: models.BudgetLimit) -> str:
-    """Выполняет действие «limit label» в рамках логики Finance Helper."""
+    """Формирует понятное название лимита для интерфейса и уведомлений."""
     parts: list[str] = []
     if limit.scope == models.LimitScope.workspace:
         parts.append('общий бюджет')
@@ -1155,7 +1155,7 @@ def _expense_total_for_limit(
     limit: models.BudgetLimit,
     day: date,
 ) -> float:
-    """Выполняет действие «expense total for limit» в рамках логики Finance Helper."""
+    """Считает расходы, которые относятся к выбранному лимиту."""
     date_from, date_to = _period_bounds(limit.period, day)
     stmt = select(func.coalesce(func.sum(models.Operation.amount), 0)).where(
         models.Operation.workspace_id == workspace_id,
@@ -1176,7 +1176,7 @@ def get_budget_limits_overview(
     workspace_id: int | None,
     day: date | None = None,
 ) -> list[dict]:
-    """Возвращает данные для сценария «budget limits overview»."""
+    """Возвращает сводку по использованию бюджетных лимитов."""
     _, workspace, _ = resolve_workspace_for_user(db, telegram_id, workspace_id)
     ref_day = day or date.today()
     rows = list_budget_limits(db, telegram_id, workspace_id)
@@ -1208,7 +1208,7 @@ def get_budget_limits_overview(
 
 
 def evaluate_limit_alerts_for_operation(db: Session, op: models.Operation) -> list[dict]:
-    """Выполняет действие «evaluate limit alerts for operation» в рамках логики Finance Helper."""
+    """Проверяет, какие уведомления по лимитам нужно отправить после операции."""
     if op.type != models.OperationType.expense:
         return []
     stmt = select(models.BudgetLimit).where(
@@ -1253,7 +1253,7 @@ def evaluate_limit_alerts_for_operation(db: Session, op: models.Operation) -> li
 
 
 def list_due_report_schedules(db: Session, run_date: date, send_time: str, frequency: str = 'monthly') -> list[dict]:
-    """Возвращает список сущностей для сценария «due report schedules»."""
+    """Возвращает список: расписания отчётов, готовые к отправке."""
     stmt = select(models.ReportSchedule).where(
         models.ReportSchedule.enabled.is_(True),
         models.ReportSchedule.frequency == frequency,

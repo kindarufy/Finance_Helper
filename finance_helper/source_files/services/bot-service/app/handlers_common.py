@@ -1,4 +1,4 @@
-"""Общие команды и действия Telegram-бота Finance Helper."""
+"""Общие обработчики команд Telegram-бота: старт, помощь, примеры и открытие Mini App."""
 from aiogram import F
 from aiogram.filters import Command
 from aiogram.types import Message, WebAppInfo
@@ -12,7 +12,7 @@ from .keyboards import MENU_KB
 
 @dp.message(Command("start"))
 async def cmd_start(message: Message):
-    """Обрабатывает пользовательский сценарий «start»."""
+    """Обрабатывает команду /start."""
     await api.upsert_user(message.from_user.id, message.from_user.username)
     await message.answer(ux.welcome_text(message.from_user.first_name), reply_markup=MENU_KB)
     await message.answer(ux.onboarding_text(), reply_markup=MENU_KB)
@@ -21,21 +21,21 @@ async def cmd_start(message: Message):
 @dp.message(Command("help"))
 @dp.message(F.text == "❓ Помощь")
 async def cmd_help(message: Message):
-    """Обрабатывает пользовательский сценарий «help»."""
+    """Обрабатывает команду /help."""
     await message.answer(ux.help_text(), reply_markup=MENU_KB)
 
 
 @dp.message(Command("examples"))
 @dp.message(F.text.in_({"🧠 Примеры ввода", "🧠 Примеры"}))
 async def cmd_examples(message: Message):
-    """Обрабатывает пользовательский сценарий «examples»."""
+    """Обрабатывает команду /examples."""
     await message.answer(ux.examples_text(), reply_markup=MENU_KB)
 
 
 @dp.message(Command("open"))
 @dp.message(F.text == "📱 Mini App")
 async def cmd_open(message: Message):
-    """Обрабатывает пользовательский сценарий «open»."""
+    """Обрабатывает команду /open и открывает Mini App."""
     try:
         await api.upsert_user(message.from_user.id, message.from_user.username)
 
@@ -65,5 +65,5 @@ async def cmd_open(message: Message):
 
 @dp.message(F.text.in_({"📌 Список команд", "📌 Команды"}))
 async def btn_commands(message: Message):
-    """Обрабатывает пользовательский сценарий «commands»."""
+    """Показывает краткое меню команд и возможностей бота."""
     await message.answer(ux.pretty_commands_text(), reply_markup=MENU_KB)

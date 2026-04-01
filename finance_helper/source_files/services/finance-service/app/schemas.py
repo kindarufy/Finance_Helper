@@ -1,4 +1,4 @@
-"""Модуль финансового сервиса Finance Helper."""
+"""Pydantic-схемы запросов и ответов финансового сервиса."""
 from __future__ import annotations
 
 from datetime import date
@@ -10,18 +10,18 @@ from .models import ImportStatus, LimitPeriod, LimitScope, MemberRole, Operation
 
 
 class Health(BaseModel):
-    """Класс «Health» описывает состояние или структуру данных данного модуля."""
+    """Схема ответа health-эндпоинта."""
     status: str = "ok"
 
 
 class UserUpsertIn(BaseModel):
-    """Класс «UserUpsertIn» описывает состояние или структуру данных данного модуля."""
+    """Входная схема для создания или обновления пользователя."""
     telegram_id: int
     username: str | None = None
 
 
 class UserOut(BaseModel):
-    """Класс «UserOut» описывает состояние или структуру данных данного модуля."""
+    """Выходная схема с данными пользователя."""
     telegram_id: int
     username: str | None
     daily_limit: float | None
@@ -32,13 +32,13 @@ class UserOut(BaseModel):
 
 
 class SetLimitIn(BaseModel):
-    """Класс «SetLimitIn» описывает состояние или структуру данных данного модуля."""
+    """Входная схема для установки дневного лимита пользователя."""
     telegram_id: int
     daily_limit: float = Field(gt=0)
 
 
 class WorkspaceCreateIn(BaseModel):
-    """Класс «WorkspaceCreateIn» описывает состояние или структуру данных данного модуля."""
+    """Входная схема для создания нового пространства."""
     telegram_id: int
     name: str = Field(min_length=1, max_length=128)
     type: WorkspaceType = WorkspaceType.shared
@@ -46,7 +46,7 @@ class WorkspaceCreateIn(BaseModel):
 
 
 class WorkspaceOut(BaseModel):
-    """Класс «WorkspaceOut» описывает состояние или структуру данных данного модуля."""
+    """Выходная схема с данными пространства."""
     id: int
     name: str
     type: WorkspaceType
@@ -58,33 +58,33 @@ class WorkspaceOut(BaseModel):
 
 
 class WorkspaceMemberAddIn(BaseModel):
-    """Класс «WorkspaceMemberAddIn» описывает состояние или структуру данных данного модуля."""
+    """Входная схема для добавления участника в пространство."""
     telegram_id: int
     member_identifier: str
     role: MemberRole = MemberRole.editor
 
 
 class WorkspaceMemberUpdateIn(BaseModel):
-    """Класс «WorkspaceMemberUpdateIn» описывает состояние или структуру данных данного модуля."""
+    """Входная схема для изменения роли участника пространства."""
     telegram_id: int
     role: MemberRole
 
 
 class WorkspaceMemberOut(BaseModel):
-    """Класс «WorkspaceMemberOut» описывает состояние или структуру данных данного модуля."""
+    """Выходная схема с данными участника пространства."""
     telegram_id: int
     username: str | None
     role: MemberRole
 
 
 class WorkspaceSetActiveIn(BaseModel):
-    """Класс «WorkspaceSetActiveIn» описывает состояние или структуру данных данного модуля."""
+    """Входная схема для выбора активного пространства."""
     telegram_id: int
     workspace_id: int
 
 
 class CategoryCreateIn(BaseModel):
-    """Класс «CategoryCreateIn» описывает состояние или структуру данных данного модуля."""
+    """Входная схема для создания категории."""
     telegram_id: int
     workspace_id: int | None = None
     name: str = Field(min_length=1, max_length=64)
@@ -93,7 +93,7 @@ class CategoryCreateIn(BaseModel):
 
 
 class CategoryUpdateIn(BaseModel):
-    """Класс «CategoryUpdateIn» описывает состояние или структуру данных данного модуля."""
+    """Входная схема для обновления категории."""
     telegram_id: int
     name: str | None = Field(default=None, min_length=1, max_length=64)
     emoji: str | None = Field(default=None, max_length=16)
@@ -101,7 +101,7 @@ class CategoryUpdateIn(BaseModel):
 
 
 class CategoryOut(BaseModel):
-    """Класс «CategoryOut» описывает состояние или структуру данных данного модуля."""
+    """Выходная схема с данными категории."""
     id: int
     workspace_id: int
     name: str
@@ -111,18 +111,18 @@ class CategoryOut(BaseModel):
 
 
 class CategoryAliasCreateIn(BaseModel):
-    """Класс «CategoryAliasCreateIn» описывает состояние или структуру данных данного модуля."""
+    """Входная схема для добавления ключевого слова категории."""
     telegram_id: int
     alias: str = Field(min_length=1, max_length=64)
 
 
 class CategoryAliasDeleteIn(BaseModel):
-    """Класс «CategoryAliasDeleteIn» описывает состояние или структуру данных данного модуля."""
+    """Входная схема для удаления ключевого слова категории."""
     telegram_id: int
 
 
 class CategoryAliasOut(BaseModel):
-    """Класс «CategoryAliasOut» описывает состояние или структуру данных данного модуля."""
+    """Выходная схема с данными ключевого слова категории."""
     id: int
     category_id: int
     alias: str
@@ -130,7 +130,7 @@ class CategoryAliasOut(BaseModel):
 
 
 class CategoryMatchIn(BaseModel):
-    """Класс «CategoryMatchIn» описывает состояние или структуру данных данного модуля."""
+    """Входная схема для подбора категории по тексту."""
     telegram_id: int
     workspace_id: int | None = None
     text: str = Field(min_length=1, max_length=255)
@@ -138,14 +138,14 @@ class CategoryMatchIn(BaseModel):
 
 
 class CategoryMatchOut(BaseModel):
-    """Класс «CategoryMatchOut» описывает состояние или структуру данных данного модуля."""
+    """Выходная схема с результатом подбора категории."""
     matched: bool
     category: CategoryOut | None = None
     reason: str | None = None
 
 
 class OperationCreateIn(BaseModel):
-    """Класс «OperationCreateIn» описывает состояние или структуру данных данного модуля."""
+    """Входная схема для создания операции."""
     telegram_id: int
     workspace_id: int | None = None
     user_telegram_id: int | None = None
@@ -165,7 +165,7 @@ class OperationCreateIn(BaseModel):
 
 
 class OperationOut(BaseModel):
-    """Класс «OperationOut» описывает состояние или структуру данных данного модуля."""
+    """Выходная схема с данными операции."""
     id: int
     workspace_id: int
     user_telegram_id: int | None = None
@@ -182,7 +182,7 @@ class OperationOut(BaseModel):
 
 
 class OperationUpdateIn(BaseModel):
-    """Класс «OperationUpdateIn» описывает состояние или структуру данных данного модуля."""
+    """Входная схема для изменения операции."""
     telegram_id: int
     workspace_id: int | None = None
     amount: float | None = Field(default=None, gt=0)
@@ -193,19 +193,19 @@ class OperationUpdateIn(BaseModel):
 
 
 class DeleteResult(BaseModel):
-    """Класс «DeleteResult» описывает состояние или структуру данных данного модуля."""
+    """Схема ответа для успешного удаления сущности."""
     deleted: bool
 
 
 class LimitCheckOut(BaseModel):
-    """Класс «LimitCheckOut» описывает состояние или структуру данных данного модуля."""
+    """Схема результата проверки дневного лимита после добавления операции."""
     limit_exceeded: bool
     daily_limit: float | None
     day_expenses_total: float
 
 
 class LimitAlertOut(BaseModel):
-    """Класс «LimitAlertOut» описывает состояние или структуру данных данного модуля."""
+    """Схема уведомления о достижении порога бюджетного лимита."""
     limit_id: int
     scope: LimitScope
     period: LimitPeriod
@@ -218,7 +218,7 @@ class LimitAlertOut(BaseModel):
 
 
 class BudgetLimitCreateIn(BaseModel):
-    """Класс «BudgetLimitCreateIn» описывает состояние или структуру данных данного модуля."""
+    """Входная схема для создания бюджетного лимита."""
     telegram_id: int
     workspace_id: int | None = None
     scope: LimitScope
@@ -233,7 +233,7 @@ class BudgetLimitCreateIn(BaseModel):
 
 
 class BudgetLimitOut(BaseModel):
-    """Класс «BudgetLimitOut» описывает состояние или структуру данных данного модуля."""
+    """Выходная схема с данными бюджетного лимита."""
     id: int
     workspace_id: int
     scope: LimitScope
@@ -246,7 +246,7 @@ class BudgetLimitOut(BaseModel):
 
 
 class BudgetLimitStatusOut(BaseModel):
-    """Класс «BudgetLimitStatusOut» описывает состояние или структуру данных данного модуля."""
+    """Выходная схема со статусом использования бюджетного лимита."""
     id: int
     workspace_id: int
     scope: LimitScope
@@ -264,7 +264,7 @@ class BudgetLimitStatusOut(BaseModel):
 
 
 class ReportScheduleUpsertIn(BaseModel):
-    """Класс «ReportScheduleUpsertIn» описывает состояние или структуру данных данного модуля."""
+    """Входная схема для создания или обновления расписания отчёта."""
     telegram_id: int
     workspace_id: int | None = None
     user_telegram_id: int | None = None
@@ -276,7 +276,7 @@ class ReportScheduleUpsertIn(BaseModel):
 
 
 class ReportScheduleOut(BaseModel):
-    """Класс «ReportScheduleOut» описывает состояние или структуру данных данного модуля."""
+    """Выходная схема с данными расписания отчёта."""
     id: int
     workspace_id: int
     user_telegram_id: int | None = None
@@ -288,7 +288,7 @@ class ReportScheduleOut(BaseModel):
 
 
 class DueReportScheduleOut(BaseModel):
-    """Класс «DueReportScheduleOut» описывает состояние или структуру данных данного модуля."""
+    """Выходная схема с расписанием отчёта, которое нужно отправить сейчас."""
     id: int
     workspace_id: int
     telegram_id: int
@@ -300,7 +300,7 @@ class DueReportScheduleOut(BaseModel):
 
 
 class ReceiptUploadCreateIn(BaseModel):
-    """Класс «ReceiptUploadCreateIn» описывает состояние или структуру данных данного модуля."""
+    """Входная схема для создания записи о загруженном чеке."""
     telegram_id: int
     workspace_id: int | None = None
     original_filename: str | None = None
@@ -309,7 +309,7 @@ class ReceiptUploadCreateIn(BaseModel):
 
 
 class ReceiptUploadOut(BaseModel):
-    """Класс «ReceiptUploadOut» описывает состояние или структуру данных данного модуля."""
+    """Выходная схема с данными загруженного чека."""
     id: int
     workspace_id: int
     status: ImportStatus
@@ -325,7 +325,7 @@ class ReceiptUploadOut(BaseModel):
 
 
 class ReceiptParseIn(BaseModel):
-    """Класс «ReceiptParseIn» описывает состояние или структуру данных данного модуля."""
+    """Входная схема для сохранения результата распознавания чека."""
     telegram_id: int
     parsed_total: float | None = Field(default=None, gt=0)
     parsed_currency: str | None = Field(default=None, min_length=3, max_length=8)
@@ -337,7 +337,7 @@ class ReceiptParseIn(BaseModel):
 
 
 class ReceiptConfirmIn(BaseModel):
-    """Класс «ReceiptConfirmIn» описывает состояние или структуру данных данного модуля."""
+    """Входная схема для подтверждения операции по чеку."""
     telegram_id: int
     category: str | None = None
     comment: str | None = None
@@ -347,7 +347,7 @@ class ReceiptConfirmIn(BaseModel):
 
 
 class StatementImportCreateIn(BaseModel):
-    """Класс «StatementImportCreateIn» описывает состояние или структуру данных данного модуля."""
+    """Входная схема для создания записи импорта банковской выписки."""
     telegram_id: int
     workspace_id: int | None = None
     original_filename: str | None = None
@@ -356,7 +356,7 @@ class StatementImportCreateIn(BaseModel):
 
 
 class StatementImportOut(BaseModel):
-    """Класс «StatementImportOut» описывает состояние или структуру данных данного модуля."""
+    """Выходная схема с данными импорта банковской выписки."""
     id: int
     workspace_id: int
     status: ImportStatus
@@ -369,7 +369,7 @@ class StatementImportOut(BaseModel):
 
 
 class StatementImportCompleteIn(BaseModel):
-    """Класс «StatementImportCompleteIn» описывает состояние или структуру данных данного модуля."""
+    """Входная схема для завершения импорта банковской выписки."""
     telegram_id: int
     imported_rows: int = Field(default=0, ge=0)
     skipped_rows: int = Field(default=0, ge=0)

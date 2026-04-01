@@ -1,4 +1,4 @@
-"""Модуль маршрутов API-шлюза Finance Helper."""
+"""Маршруты API-шлюза для Mini App: выдача токена, bootstrap-данные и смена активного пространства."""
 from __future__ import annotations
 
 from datetime import date, timedelta
@@ -17,7 +17,7 @@ router = APIRouter()
 
 @router.get("/miniapp/dashboard", dependencies=[Depends(require_internal_key)])
 async def miniapp_dashboard(telegram_id: int = Query(...), workspace_id: int | None = Query(None), days: int = Query(30), x_api_key: str = Header(alias="X-API-Key")):
-    """Выполняет действие «miniapp dashboard» в рамках логики Finance Helper."""
+    """Проксирует получение данных дашборда Mini App."""
     params: dict[str, object] = {"telegram_id": telegram_id, "days": days}
     if workspace_id is not None:
         params["workspace_id"] = workspace_id
@@ -26,7 +26,7 @@ async def miniapp_dashboard(telegram_id: int = Query(...), workspace_id: int | N
 
 @router.get("/miniapp/timeseries", dependencies=[Depends(require_internal_key)])
 async def miniapp_timeseries(telegram_id: int = Query(...), workspace_id: int | None = Query(None), date_from: date = Query(...), date_to: date = Query(...), x_api_key: str = Header(alias="X-API-Key")):
-    """Выполняет действие «miniapp timeseries» в рамках логики Finance Helper."""
+    """Проксирует получение временного ряда для графика Mini App."""
     params: dict[str, object] = {"telegram_id": telegram_id, "date_from": date_from.isoformat(), "date_to": date_to.isoformat()}
     if workspace_id is not None:
         params["workspace_id"] = workspace_id
@@ -35,20 +35,20 @@ async def miniapp_timeseries(telegram_id: int = Query(...), workspace_id: int | 
 
 @router.get("/miniapp/app")
 async def miniapp_app(token: str = Query(...)):
-    """Выполняет действие «miniapp app» в рамках логики Finance Helper."""
+    """Открывает статический файл Mini App после проверки токена."""
     await miniapp_context(token)
     return FileResponse(miniapp_file())
 
 
 @router.get("/miniapp/token", dependencies=[Depends(require_internal_key)])
 async def miniapp_token(telegram_id: int = Query(...), workspace_id: int | None = Query(None), ttl_seconds: int = Query(43200, ge=300, le=172800)):
-    """Выполняет действие «miniapp token» в рамках логики Finance Helper."""
+    """Выдаёт подписанный токен доступа для Mini App."""
     return {"token": sign_miniapp_token(telegram_id, settings.miniapp_signing_secret, workspace_id=workspace_id, ttl_seconds=ttl_seconds)}
 
 
 @router.get("/miniapp/public/bootstrap")
 async def miniapp_public_bootstrap(token: str = Query(...)):
-    """Выполняет действие «miniapp public bootstrap» в рамках логики Finance Helper."""
+    """Собирает стартовые данные Mini App для авторизованного пользователя."""
     telegram_id, workspace_id = await miniapp_context(token)
     x_api_key = settings.internal_api_key
     active = await internal_get(f"{settings.finance_url}/workspaces/active", x_api_key, {"telegram_id": telegram_id})
@@ -77,7 +77,7 @@ async def miniapp_public_bootstrap(token: str = Query(...)):
 
 @router.post("/miniapp/public/workspaces/active")
 async def miniapp_public_set_active_workspace(payload: dict, token: str = Query(...)):
-    """Выполняет действие «miniapp public set active workspace» в рамках логики Finance Helper."""
+    """Меняет активное пространство из публичного Mini App."""
     telegram_id, _ = await miniapp_context(token)
     workspace_id = int(payload.get("workspace_id"))
     response = await forward(

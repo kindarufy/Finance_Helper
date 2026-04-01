@@ -1,4 +1,4 @@
-"""Модуль автоматических тестов проекта Finance Helper."""
+"""Тесты утилит Telegram-бота: разбор команд, естественного ввода, дат и банковских выписок."""
 # flake8: noqa: E402
 # pyright: reportMissingImports=false
 
@@ -22,49 +22,49 @@ from app.utils import (
 
 
 def test_parse_add_command_expense_success():
-    """Проверяет сценарий «parse add command expense success»."""
+    """Проверяет успешный разбор команды добавления расхода."""
     result = parse_add_command("/add 500 расход Еда обед")
     assert result == (500.0, "expense", "Еда", "обед")
 
 
 def test_parse_add_command_income_success():
-    """Проверяет сценарий «parse add command income success»."""
+    """Проверяет успешный разбор команды добавления дохода."""
     result = parse_add_command("/add 30000 доход Зарплата основная")
     assert result == (30000.0, "income", "Зарплата", "основная")
 
 
 def test_parse_add_command_invalid_amount():
-    """Проверяет сценарий «parse add command invalid amount»."""
+    """Проверяет, что команда добавления не проходит при некорректной сумме."""
     result = parse_add_command("/add abc расход Еда")
     assert result is None
 
 
 def test_parse_add_command_negative_amount():
-    """Проверяет сценарий «parse add command negative amount»."""
+    """Проверяет, что команда добавления не проходит при отрицательной сумме."""
     result = parse_add_command("/add -100 расход Еда")
     assert result is None
 
 
 def test_parse_add_command_invalid_type():
-    """Проверяет сценарий «parse add command invalid type»."""
+    """Проверяет, что команда добавления не проходит при неподдерживаемом типе операции."""
     result = parse_add_command("/add 500 перевод Еда")
     assert result is None
 
 
 def test_parse_report_success():
-    """Проверяет сценарий «parse report success»."""
+    """Проверяет успешный разбор команды отчёта."""
     result = parse_report("/report 2025-12-01 2025-12-31")
     assert result == ("2025-12-01", "2025-12-31")
 
 
 def test_parse_report_invalid_format():
-    """Проверяет сценарий «parse report invalid format»."""
+    """Проверяет, что команда отчёта не проходит при неверном формате дат."""
     result = parse_report("/report 2025/12/01 2025/12/31")
     assert result is None
 
 
 def test_parse_natural_operation_expense_with_relative_date():
-    """Проверяет сценарий «parse natural operation expense with relative date»."""
+    """Проверяет разбор расхода из естественного текста с относительной датой."""
     parsed = parse_natural_operation("1500 такси вчера", today=date(2026, 3, 30))
     assert parsed == {
         "amount": 1500.0,
@@ -77,7 +77,7 @@ def test_parse_natural_operation_expense_with_relative_date():
 
 
 def test_parse_natural_operation_income_with_plus():
-    """Проверяет сценарий «parse natural operation income with plus»."""
+    """Проверяет разбор дохода из естественного текста со знаком плюс."""
     parsed = parse_natural_operation("+30000 зарплата", today=date(2026, 3, 30))
     assert parsed["amount"] == 30000.0
     assert parsed["op_type"] == "income"
@@ -86,7 +86,7 @@ def test_parse_natural_operation_income_with_plus():
 
 
 def test_parse_natural_operation_with_currency_and_iso_date():
-    """Проверяет сценарий «parse natural operation with currency and iso date»."""
+    """Проверяет разбор операции с валютой и датой в формате ISO."""
     parsed = parse_natural_operation("799 usd iphone 2026-03-28", today=date(2026, 3, 30))
     assert parsed["currency"] == "USD"
     assert parsed["occurred_at"] == date(2026, 3, 28)
@@ -94,7 +94,7 @@ def test_parse_natural_operation_with_currency_and_iso_date():
 
 
 def test_parse_user_date_today_short_ru_formats():
-    """Проверяет сценарий «parse user date today short ru formats»."""
+    """Проверяет разбор словесных и коротких русских форматов даты."""
     today = date(2026, 3, 30)
     assert parse_user_date("сегодня", today=today) == date(2026, 3, 30)
     assert parse_user_date("вчера", today=today) == date(2026, 3, 29)
@@ -105,20 +105,20 @@ def test_parse_user_date_today_short_ru_formats():
 
 
 def test_parse_user_date_invalid_returns_none():
-    """Проверяет сценарий «parse user date invalid returns none»."""
+    """Проверяет, что некорректная дата возвращает None."""
     assert parse_user_date("32.03.2026", today=date(2026, 3, 30)) is None
     assert parse_user_date("не дата", today=date(2026, 3, 30)) is None
 
 
 def test_infer_default_category():
-    """Проверяет сценарий «infer default category»."""
+    """Проверяет подбор стандартной категории по тексту."""
     assert infer_default_category("пицца и кофе", "expense") == "Еда"
     assert infer_default_category("зарплата за март", "income") == "Зарплата"
 
 
 
 def test_parse_statement_file_csv():
-    """Проверяет сценарий «parse statement file csv»."""
+    """Проверяет разбор CSV-файла банковской выписки."""
     csv_data = (
         "date;debit;credit;currency;description\n"
         "2026-03-28;1500;;RUB;Taxi\n"
@@ -133,14 +133,14 @@ def test_parse_statement_file_csv():
 
 
 def test_parse_natural_operation_with_short_ru_date():
-    """Проверяет сценарий «parse natural operation with short ru date»."""
+    """Проверяет разбор естественного текста с короткой русской датой."""
     parsed = parse_natural_operation("900 кино 28.03", today=date(2026, 3, 30))
     assert parsed["occurred_at"] == date(2026, 3, 28)
     assert parsed["description"] == "кино"
 
 
 def test_parse_statement_file_xlsx(tmp_path):
-    """Проверяет сценарий «parse statement file xlsx»."""
+    """Проверяет разбор XLSX-файла банковской выписки."""
     openpyxl = pytest.importorskip("openpyxl")
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -158,7 +158,7 @@ def test_parse_statement_file_xlsx(tmp_path):
 
 
 def test_statement_debit_credit_csv(tmp_path):
-    """Проверяет сценарий «statement debit credit csv»."""
+    """Проверяет разбор CSV-выписки с дебетом и кредитом."""
     csv_data = (
         "date;debit;credit;currency;description\n"
         "2026-03-28;1500;;RUB;Taxi\n"

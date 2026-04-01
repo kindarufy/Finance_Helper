@@ -1,4 +1,4 @@
-"""Модуль финансового сервиса Finance Helper."""
+"""Подключение SQLAlchemy к базе данных и выдача сессии для обработчиков финансового сервиса."""
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
@@ -6,7 +6,7 @@ from .config import settings
 
 
 class Base(DeclarativeBase):
-    """Класс «Base» описывает состояние или структуру данных данного модуля."""
+    """Базовый класс SQLAlchemy для всех ORM-моделей финансового сервиса."""
     pass
 
 
@@ -15,7 +15,7 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 
 def get_db():
-    """Возвращает данные для сценария «db»."""
+    """Открывает сессию базы данных и закрывает её после завершения запроса."""
     db = SessionLocal()
     try:
         yield db

@@ -1,4 +1,4 @@
-"""Модуль сервисного слоя Telegram-бота Finance Helper."""
+"""Подпись токенов доступа, которые бот использует для открытия Mini App."""
 from __future__ import annotations
 
 import base64
@@ -10,12 +10,12 @@ from typing import Any
 
 
 def _b64url_encode(data: bytes) -> str:
-    """Выполняет действие «b64url encode» в рамках логики Finance Helper."""
+    """Кодирует байты в URL-безопасную строку base64 без символов заполнения."""
     return base64.urlsafe_b64encode(data).rstrip(b"=").decode("ascii")
 
 
 def sign_miniapp_token(telegram_id: int, secret: str, workspace_id: int | None = None, ttl_seconds: int = 3600 * 12) -> str:
-    """Выполняет действие «sign miniapp token» в рамках логики Finance Helper."""
+    """Подписывает токен доступа для Mini App, который бот отдаёт пользователю."""
     payload: dict[str, Any] = {"telegram_id": int(telegram_id), "exp": int(time.time()) + int(ttl_seconds)}
     if workspace_id is not None:
         payload["workspace_id"] = int(workspace_id)

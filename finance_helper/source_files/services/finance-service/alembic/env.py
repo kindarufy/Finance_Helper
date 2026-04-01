@@ -1,4 +1,4 @@
-"""Модуль настройки Alembic для Finance Helper."""
+"""Конфигурация Alembic для запуска миграций базы данных финансового сервиса."""
 from __future__ import annotations
 
 from logging.config import fileConfig
@@ -20,7 +20,7 @@ target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:
-    """Выполняет действие «run migrations offline» в рамках логики Finance Helper."""
+    """Запускает миграции Alembic в offline-режиме без подключения к базе данных."""
     context.configure(
         url=settings.database_url,
         target_metadata=target_metadata,
@@ -34,7 +34,7 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-    """Выполняет действие «run migrations online» в рамках логики Finance Helper."""
+    """Запускает миграции Alembic в online-режиме через реальное подключение к базе данных."""
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",

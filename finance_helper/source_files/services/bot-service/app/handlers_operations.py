@@ -1,4 +1,4 @@
-"""Модуль сервисного слоя Telegram-бота Finance Helper."""
+"""Обработчики Telegram-бота для добавления, просмотра, редактирования, удаления и экспорта операций."""
 from datetime import date, timedelta
 
 from aiogram import F
@@ -27,7 +27,7 @@ from .navigation import try_interrupt_current_flow
 
 @dp.message(F.text.in_({"➖ Добавить расход", "➖ Расход"}))
 async def btn_add_expense(message: Message, state: FSMContext):
-    """Обрабатывает пользовательский сценарий «add expense»."""
+    """Запускает сценарий добавления расхода."""
     await state.clear()
     await state.update_data(op_type="expense")
     await state.set_state(AddFlow.amount)
@@ -36,7 +36,7 @@ async def btn_add_expense(message: Message, state: FSMContext):
 
 @dp.message(F.text.in_({"➕ Добавить доход", "➕ Доход"}))
 async def btn_add_income(message: Message, state: FSMContext):
-    """Обрабатывает пользовательский сценарий «add income»."""
+    """Запускает сценарий добавления дохода."""
     await state.clear()
     await state.update_data(op_type="income")
     await state.set_state(AddFlow.amount)
@@ -45,7 +45,7 @@ async def btn_add_income(message: Message, state: FSMContext):
 
 @dp.message(AddFlow.amount)
 async def addflow_amount(message: Message, state: FSMContext):
-    """Выполняет действие «addflow amount» в рамках логики Finance Helper."""
+    """Обрабатывает ввод пользователя на шаге ввода суммы операции."""
     if await try_interrupt_current_flow(message, state):
         return
     try:
@@ -63,7 +63,7 @@ async def addflow_amount(message: Message, state: FSMContext):
 
 @dp.callback_query(F.data.startswith("addcat:"))
 async def addflow_category(callback: CallbackQuery, state: FSMContext):
-    """Выполняет действие «addflow category» в рамках логики Finance Helper."""
+    """Обрабатывает ввод пользователя на шаге выбора категории операции."""
     raw = callback.data.split(":", 1)[1]
     data = await state.get_data()
     if "op_type" not in data or "amount" not in data:
@@ -81,7 +81,7 @@ async def addflow_category(callback: CallbackQuery, state: FSMContext):
 
 @dp.message(AddFlow.comment)
 async def addflow_comment(message: Message, state: FSMContext):
-    """Выполняет действие «addflow comment» в рамках логики Finance Helper."""
+    """Обрабатывает ввод пользователя на шаге ввода комментария к операции."""
     if await try_interrupt_current_flow(message, state):
         return
     comment = (message.text or "").strip()
@@ -94,7 +94,7 @@ async def addflow_comment(message: Message, state: FSMContext):
 
 @dp.message(AddFlow.date)
 async def addflow_date(message: Message, state: FSMContext):
-    """Выполняет действие «addflow date» в рамках логики Finance Helper."""
+    """Обрабатывает ввод пользователя на шаге ввода даты операции."""
     if await try_interrupt_current_flow(message, state):
         return
     data = await state.get_data()
@@ -136,7 +136,7 @@ async def addflow_date(message: Message, state: FSMContext):
 # ----------------------------
 @dp.message(F.text.in_({"📋 Последние 10 операций", "📋 Последние операции"}))
 async def btn_last10(message: Message):
-    """Обрабатывает пользовательский сценарий «last10»."""
+    """Запускает сценарий показа последних 10 операций."""
     items = await api.list_operations(message.from_user.id, limit=10)
     if not items:
         await message.answer("Операций пока нет. Нажми «➖ Добавить расход» или «➕ Добавить доход».", reply_markup=MENU_KB)
@@ -165,7 +165,7 @@ async def btn_last10(message: Message):
 
 @dp.message(F.text.in_({"📊 Статистика за месяц", "📊 Статистика"}))
 async def btn_month_stats(message: Message):
-    """Обрабатывает пользовательский сценарий «month stats»."""
+    """Запускает сценарий показа статистики за месяц."""
     try:
         today = date.today()
         text = await build_month_stats_text(message.from_user.id, today.year, today.month)
@@ -179,14 +179,14 @@ async def btn_month_stats(message: Message):
 # ----------------------------
 @dp.message(F.text.in_({"💸 Лимиты и бюджеты", "💸 Лимиты"}))
 async def btn_budget(message: Message, state: FSMContext):
-    """Обрабатывает пользовательский сценарий «budget»."""
+    """Запускает сценарий открытия раздела лимитов и бюджетов."""
     await state.clear()
     await message.answer("Выбери действие по лимитам:", reply_markup=budget_menu_kb())
 
 
 @dp.callback_query(F.data == "budget:view")
 async def cb_budget_view(callback: CallbackQuery):
-    """Выполняет действие «cb budget view» в рамках логики Finance Helper."""
+    """Обрабатывает callback для просмотра лимитов и бюджетов."""
     text = await build_limit_overview_text(callback.from_user.id)
     await callback.message.answer(text, reply_markup=MENU_KB)
     await callback.answer()
@@ -194,7 +194,7 @@ async def cb_budget_view(callback: CallbackQuery):
 
 @dp.callback_query(F.data.in_({"budget:daily", "budget:monthly"}))
 async def cb_budget_simple(callback: CallbackQuery, state: FSMContext):
-    """Выполняет действие «cb budget simple» в рамках логики Finance Helper."""
+    """Обрабатывает callback для настройки общего лимита."""
     period = "daily" if callback.data.endswith("daily") else "monthly"
     await state.clear()
     await state.update_data(limit_scope="user", limit_period=period, category_id=None)
@@ -206,7 +206,7 @@ async def cb_budget_simple(callback: CallbackQuery, state: FSMContext):
 
 @dp.callback_query(F.data == "budget:category")
 async def cb_budget_category(callback: CallbackQuery, state: FSMContext):
-    """Выполняет действие «cb budget category» в рамках логики Finance Helper."""
+    """Обрабатывает callback для настройки лимита по категории."""
     await state.clear()
     await state.update_data(limit_scope="category", limit_period="monthly")
     await callback.message.answer(
@@ -218,7 +218,7 @@ async def cb_budget_category(callback: CallbackQuery, state: FSMContext):
 
 @dp.callback_query(F.data.startswith("limitcat:"))
 async def cb_budget_category_pick(callback: CallbackQuery, state: FSMContext):
-    """Выполняет действие «cb budget category pick» в рамках логики Finance Helper."""
+    """Обрабатывает callback для выбора категории для лимита."""
     raw = callback.data.split(":", 1)[1]
     if raw == "fallback":
         await callback.answer("Категории не найдены.", show_alert=True)
@@ -231,7 +231,7 @@ async def cb_budget_category_pick(callback: CallbackQuery, state: FSMContext):
 
 @dp.message(BudgetFlow.amount)
 async def budgetflow_amount(message: Message, state: FSMContext):
-    """Выполняет действие «budgetflow amount» в рамках логики Finance Helper."""
+    """Обрабатывает ввод пользователя на шаге ввода суммы лимита."""
     if await try_interrupt_current_flow(message, state):
         return
     txt = (message.text or "").strip().lower()
@@ -282,7 +282,7 @@ async def budgetflow_amount(message: Message, state: FSMContext):
 # ----------------------------
 @dp.message(F.text.in_({"🗑 Удалить операцию", "🗑 Удалить"}))
 async def btn_delete_any(message: Message):
-    """Обрабатывает пользовательский сценарий «delete any»."""
+    """Запускает сценарий удаления операции."""
     items = await api.list_operations(message.from_user.id, limit=PICK_LIMIT)
     if not items:
         await message.answer("Удалять нечего — операций пока нет.", reply_markup=MENU_KB)
@@ -292,7 +292,7 @@ async def btn_delete_any(message: Message):
 
 @dp.callback_query(F.data.startswith("dpg:"))
 async def cb_delete_page(callback: CallbackQuery):
-    """Выполняет действие «cb delete page» в рамках логики Finance Helper."""
+    """Обрабатывает callback для переключения страницы выбора операции."""
     offset = int(callback.data.split("dpg:", 1)[1])
     items = await api.list_operations_page(callback.from_user.id, limit=PICK_LIMIT, offset=offset)
     if not items:
@@ -305,7 +305,7 @@ async def cb_delete_page(callback: CallbackQuery):
 
 @dp.callback_query(F.data.startswith("d:"))
 async def cb_delete_pick(callback: CallbackQuery):
-    """Выполняет действие «cb delete pick» в рамках логики Finance Helper."""
+    """Обрабатывает callback для выбора операции для удаления."""
     op_id = int(callback.data.split(":", 1)[1])
     await callback.message.edit_text(f"Удалить операцию #{op_id}?")
     await callback.message.edit_reply_markup(reply_markup=confirm_delete_kb(op_id))
@@ -314,7 +314,7 @@ async def cb_delete_pick(callback: CallbackQuery):
 
 @dp.callback_query(F.data.startswith("dy:"))
 async def cb_delete_confirm(callback: CallbackQuery):
-    """Выполняет действие «cb delete confirm» в рамках логики Finance Helper."""
+    """Обрабатывает callback для подтверждения удаления операции."""
     op_id = int(callback.data.split(":", 1)[1])
     res = await api.delete_operation(callback.from_user.id, op_id)
     await callback.message.edit_text("✅ Операция удалена." if res.get("deleted") else "Не найдено (возможно уже удалено).")
@@ -323,7 +323,7 @@ async def cb_delete_confirm(callback: CallbackQuery):
 
 @dp.callback_query(F.data == "dcancel")
 async def cb_delete_cancel(callback: CallbackQuery):
-    """Выполняет действие «cb delete cancel» в рамках логики Finance Helper."""
+    """Обрабатывает callback для отмены удаления операции."""
     await callback.message.edit_text("Ок, отменено ✅")
     await callback.answer()
 
@@ -333,7 +333,7 @@ async def cb_delete_cancel(callback: CallbackQuery):
 # ----------------------------
 @dp.message(F.text.in_({"✏️ Изменить операцию", "✏️ Изменить"}))
 async def btn_edit_any(message: Message):
-    """Обрабатывает пользовательский сценарий «edit any»."""
+    """Запускает сценарий редактирования операции."""
     items = await api.list_operations(message.from_user.id, limit=PICK_LIMIT)
     if not items:
         await message.answer("Изменять нечего — операций пока нет.", reply_markup=MENU_KB)
@@ -343,7 +343,7 @@ async def btn_edit_any(message: Message):
 
 @dp.callback_query(F.data.startswith("epg:"))
 async def cb_edit_page(callback: CallbackQuery):
-    """Выполняет действие «cb edit page» в рамках логики Finance Helper."""
+    """Обрабатывает callback для переключения страницы выбора операции."""
     offset = int(callback.data.split("epg:", 1)[1])
     items = await api.list_operations_page(callback.from_user.id, limit=PICK_LIMIT, offset=offset)
     if not items:
@@ -356,7 +356,7 @@ async def cb_edit_page(callback: CallbackQuery):
 
 @dp.callback_query(F.data.startswith("e:"))
 async def cb_edit_pick(callback: CallbackQuery, state: FSMContext):
-    """Выполняет действие «cb edit pick» в рамках логики Finance Helper."""
+    """Обрабатывает callback для выбора операции для редактирования."""
     _, op_id, op_type = callback.data.split(":", 2)
     await state.clear()
     await state.update_data(op_id=int(op_id), op_type=op_type)
@@ -370,7 +370,7 @@ async def cb_edit_pick(callback: CallbackQuery, state: FSMContext):
 
 @dp.message(EditAnyFlow.amount)
 async def edit_any_amount(message: Message, state: FSMContext):
-    """Выполняет действие «edit any amount» в рамках логики Finance Helper."""
+    """Обрабатывает ввод пользователя на шаге изменения суммы операции."""
     if await try_interrupt_current_flow(message, state):
         return
     txt = (message.text or "").strip().lower()
@@ -399,7 +399,7 @@ async def edit_any_amount(message: Message, state: FSMContext):
 
 @dp.message(EditAnyFlow.comment)
 async def edit_any_comment(message: Message, state: FSMContext):
-    """Выполняет действие «edit any comment» в рамках логики Finance Helper."""
+    """Обрабатывает ввод пользователя на шаге изменения комментария операции."""
     if await try_interrupt_current_flow(message, state):
         return
     txt = (message.text or "").strip()
@@ -428,7 +428,7 @@ async def edit_any_comment(message: Message, state: FSMContext):
 
 @dp.callback_query(F.data.startswith("editcat:"))
 async def cb_edit_category(callback: CallbackQuery, state: FSMContext):
-    """Выполняет действие «cb edit category» в рамках логики Finance Helper."""
+    """Обрабатывает callback для смены категории операции."""
     raw = callback.data.split(":", 1)[1]
     if raw == "keep":
         category_mode = "keep"
@@ -451,7 +451,7 @@ async def cb_edit_category(callback: CallbackQuery, state: FSMContext):
 
 @dp.message(EditAnyFlow.date)
 async def edit_any_date(message: Message, state: FSMContext):
-    """Выполняет действие «edit any date» в рамках логики Finance Helper."""
+    """Обрабатывает ввод пользователя на шаге изменения даты операции."""
     if await try_interrupt_current_flow(message, state):
         return
     raw = (message.text or "").strip()
@@ -493,7 +493,7 @@ async def edit_any_date(message: Message, state: FSMContext):
 # ----------------------------
 @dp.message(Command("add"))
 async def cmd_add(message: Message):
-    """Обрабатывает пользовательский сценарий «add»."""
+    """Обрабатывает команду /add."""
     parsed = parse_add_command(message.text or "")
     if not parsed:
         await message.answer("Формат: /add <сумма> <расход|доход> <категория> [комментарий]", reply_markup=MENU_KB)
@@ -518,7 +518,7 @@ async def cmd_add(message: Message):
 
 @dp.message(Command("report"))
 async def cmd_report(message: Message):
-    """Обрабатывает пользовательский сценарий «report»."""
+    """Обрабатывает команду /report."""
     parsed = parse_report(message.text or "")
     if not parsed:
         await message.answer("Формат: /report YYYY-MM-DD YYYY-MM-DD", reply_markup=MENU_KB)
@@ -547,7 +547,7 @@ async def cmd_report(message: Message):
 
 @dp.message(Command("daily"))
 async def cmd_daily(message: Message):
-    """Обрабатывает пользовательский сценарий «daily»."""
+    """Обрабатывает команду /daily."""
     try:
         res = await api.notify_daily(message.from_user.id)
     except Exception:
@@ -564,14 +564,14 @@ async def cmd_daily(message: Message):
 # ----------------------------
 @dp.message(F.text == "📤 Экспорт")
 async def btn_export(message: Message, state: FSMContext):
-    """Обрабатывает пользовательский сценарий «export»."""
+    """Запускает сценарий экспорта данных."""
     await state.clear()
     await message.answer("Выбери вариант экспорта:", reply_markup=export_menu_kb())
 
 
 @dp.callback_query(F.data.startswith("export:"))
 async def cb_export(callback: CallbackQuery):
-    """Выполняет действие «cb export» в рамках логики Finance Helper."""
+    """Обрабатывает callback для экспорта данных."""
     _, mode, fmt = callback.data.split(":", 2)
     await callback.answer("Готовлю файл…")
     try:
@@ -585,7 +585,7 @@ async def cb_export(callback: CallbackQuery):
 
 @dp.callback_query(F.data == "nsave")
 async def cb_natural_save(callback: CallbackQuery, state: FSMContext):
-    """Выполняет действие «cb natural save» в рамках логики Finance Helper."""
+    """Обрабатывает callback для подтверждения операции из естественного текста."""
     data = await state.get_data()
     payload = data.get("natural_payload")
     if not payload:
@@ -621,7 +621,7 @@ async def cb_natural_save(callback: CallbackQuery, state: FSMContext):
 
 @dp.callback_query(F.data == "ncancel")
 async def cb_natural_cancel(callback: CallbackQuery, state: FSMContext):
-    """Выполняет действие «cb natural cancel» в рамках логики Finance Helper."""
+    """Обрабатывает callback для отмены операции из естественного текста."""
     await state.clear()
     await callback.message.edit_text("Ок, отменено ✅")
     await callback.answer()

@@ -1,4 +1,4 @@
-"""Модуль сервисного слоя Telegram-бота Finance Helper."""
+"""Вспомогательные функции Telegram-бота для текстов, клавиатур, Mini App и естественного ввода."""
 import calendar
 from collections import defaultdict
 from datetime import date
@@ -15,7 +15,7 @@ from .utils import infer_default_category, parse_natural_operation
 
 
 def _format_limit_alert(alert: dict) -> str:
-    """Форматирует данные для сценария «imit alert»."""
+    """Преобразует информацию о сработавшем лимите в понятное текстовое сообщение."""
     threshold = int(alert.get("threshold") or 0)
     icon = "⚠️" if threshold >= 100 else "🔔"
     return (
@@ -27,13 +27,13 @@ def _format_limit_alert(alert: dict) -> str:
 
 
 async def _send_limit_alerts(message: Message, payload: dict):
-    """Отправляет данные, относящиеся к сценарию «limit alerts»."""
+    """Отправляет пользователю уведомления о достижении порогов лимита."""
     for alert in payload.get("limit_alerts") or []:
         await message.answer(_format_limit_alert(alert), reply_markup=MENU_KB)
 
 
 async def build_limit_overview_text(telegram_id: int) -> str:
-    """Собирает итоговую структуру или текст для сценария «limit overview text»."""
+    """Собирает текстовую сводку по всем лимитам выбранного пространства."""
     items = await api.limits_overview(telegram_id)
     if not items:
         return "Активных лимитов пока нет."
@@ -48,7 +48,7 @@ async def build_limit_overview_text(telegram_id: int) -> str:
 
 
 async def build_monthly_report_text(telegram_id: int, year: int, month: int) -> str:
-    """Собирает итоговую структуру или текст для сценария «monthly report text»."""
+    """Запрашивает и возвращает текст ежемесячного отчёта."""
     workspace_id = await _current_workspace_id(telegram_id)
     payload = await api.monthly_report(telegram_id, year, month, workspace_id=workspace_id)
     lines = [
@@ -80,14 +80,14 @@ async def build_monthly_report_text(telegram_id: int, year: int, month: int) -> 
 
 
 async def build_spending_analysis_text(telegram_id: int, year: int, month: int) -> str:
-    """Собирает итоговую структуру или текст для сценария «spending analysis text»."""
+    """Запрашивает и возвращает текст AI-анализа трат."""
     workspace_id = await _current_workspace_id(telegram_id)
     payload = await api.spending_analysis(telegram_id, year, month, workspace_id=workspace_id)
     return payload.get("text") or "Недостаточно данных для AI-анализа."
 
 
 async def build_workspace_overview_text(telegram_id: int) -> str:
-    """Собирает итоговую структуру или текст для сценария «workspace overview text»."""
+    """Собирает текстовую сводку по пространствам пользователя."""
     try:
         active = await api.get_active_workspace(telegram_id)
     except Exception:
@@ -116,7 +116,7 @@ async def build_workspace_overview_text(telegram_id: int) -> str:
 
 
 async def _current_workspace_id(telegram_id: int) -> int | None:
-    """Возвращает текущее значение для сценария «workspace id»."""
+    """Возвращает идентификатор активного пространства пользователя."""
     try:
         active = await api.get_active_workspace(telegram_id)
         return int(active["id"])
@@ -125,13 +125,13 @@ async def _current_workspace_id(telegram_id: int) -> int | None:
 
 
 async def _miniapp_url_for_user(telegram_id: int) -> str:
-    """Выполняет действие «miniapp url for user» в рамках логики Finance Helper."""
+    """Формирует персональную ссылку на Mini App для пользователя."""
     workspace_id = await _current_workspace_id(telegram_id)
     return await api.build_miniapp_url(telegram_id, workspace_id=workspace_id)
 
 
 async def _send_export_document(message: Message, telegram_id: int, mode: str, fmt: str):
-    """Отправляет данные, относящиеся к сценарию «export document»."""
+    """Отправляет пользователю экспортированный файл операций."""
     workspace_id = await _current_workspace_id(telegram_id)
     today = date.today()
     first_day = today.replace(day=1)
@@ -162,11 +162,11 @@ async def _send_export_document(message: Message, telegram_id: int, mode: str, f
 
 
 def pretty_commands_text() -> str:
-    """Выполняет действие «pretty commands text» в рамках логики Finance Helper."""
+    """Возвращает красивое текстовое описание возможностей бота."""
     return ux.pretty_commands_text()
 
 async def _list_categories_safe(telegram_id: int, op_type: str | None = None, include_archived: bool = False) -> list[dict]:
-    """Выполняет действие «list categories safe» в рамках логики Finance Helper."""
+    """Безопасно запрашивает категории и в случае ошибки возвращает пустой список."""
     try:
         return await api.list_categories(telegram_id, category_type=op_type, include_archived=include_archived)
     except Exception:
@@ -174,7 +174,7 @@ async def _list_categories_safe(telegram_id: int, op_type: str | None = None, in
 
 
 async def _category_name_by_id(telegram_id: int, category_id: int) -> str | None:
-    """Выполняет действие «category name by id» в рамках логики Finance Helper."""
+    """Находит название категории по её идентификатору."""
     for op_type in ("expense", "income"):
         cats = await _list_categories_safe(telegram_id, op_type=op_type, include_archived=True)
         for cat in cats:
@@ -184,7 +184,7 @@ async def _category_name_by_id(telegram_id: int, category_id: int) -> str | None
 
 
 async def categories_kb(telegram_id: int, op_type: str, prefix: str, include_keep: bool = False, keep_text: str = "Без изменений") -> InlineKeyboardMarkup:
-    """Выполняет действие «categories kb» в рамках логики Finance Helper."""
+    """Строит клавиатуру со списком категорий."""
     categories = await _list_categories_safe(telegram_id, op_type=op_type, include_archived=False)
     rows: list[list[InlineKeyboardButton]] = []
     row: list[InlineKeyboardButton] = []
@@ -204,7 +204,7 @@ async def categories_kb(telegram_id: int, op_type: str, prefix: str, include_kee
 
 
 async def category_action_type_kb(action: str) -> InlineKeyboardMarkup:
-    """Выполняет действие «category action type kb» в рамках логики Finance Helper."""
+    """Строит клавиатуру выбора типа категории для нужного действия."""
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
@@ -217,7 +217,7 @@ async def category_action_type_kb(action: str) -> InlineKeyboardMarkup:
 
 
 async def category_manage_menu_kb() -> InlineKeyboardMarkup:
-    """Выполняет действие «category manage menu kb» в рамках логики Finance Helper."""
+    """Строит меню управления категориями."""
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
@@ -241,7 +241,7 @@ async def category_manage_menu_kb() -> InlineKeyboardMarkup:
 
 
 async def _render_categories_text(telegram_id: int, op_type: str) -> str:
-    """Выполняет действие «render categories text» в рамках логики Finance Helper."""
+    """Формирует текстовый список категорий и их ключевых слов."""
     cats = await _list_categories_safe(telegram_id, op_type=op_type, include_archived=False)
     title = "🔴 Категории расходов" if op_type == "expense" else "🟢 Категории доходов"
     if not cats:
@@ -258,7 +258,7 @@ async def _render_categories_text(telegram_id: int, op_type: str) -> str:
 
 
 def ops_picker_kb(action: str, items: list[dict], offset: int) -> InlineKeyboardMarkup:
-    """Выполняет действие «ops picker kb» в рамках логики Finance Helper."""
+    """Строит клавиатуру выбора операции из списка."""
     rows: list[list[InlineKeyboardButton]] = []
     for op in items:
         op_id = op["id"]
@@ -283,21 +283,21 @@ def ops_picker_kb(action: str, items: list[dict], offset: int) -> InlineKeyboard
 
 
 def confirm_delete_kb(op_id: int) -> InlineKeyboardMarkup:
-    """Выполняет действие «confirm delete kb» в рамках логики Finance Helper."""
+    """Строит клавиатуру подтверждения удаления операции."""
     return InlineKeyboardMarkup(
         inline_keyboard=[[InlineKeyboardButton(text="✅ Да, удалить", callback_data=f"dy:{op_id}"), InlineKeyboardButton(text="❌ Отмена", callback_data="dcancel")]]
     )
 
 
 def natural_confirm_kb() -> InlineKeyboardMarkup:
-    """Выполняет действие «natural confirm kb» в рамках логики Finance Helper."""
+    """Строит клавиатуру подтверждения операции, распознанной из текста."""
     return InlineKeyboardMarkup(
         inline_keyboard=[[InlineKeyboardButton(text="✅ Сохранить", callback_data="nsave"), InlineKeyboardButton(text="❌ Отмена", callback_data="ncancel")]]
     )
 
 
 async def _match_or_infer_category(telegram_id: int, description: str | None, op_type: str) -> str:
-    """Выполняет действие «match or infer category» в рамках логики Finance Helper."""
+    """Пытается подобрать категорию по тексту или через простую эвристику."""
     if description:
         try:
             matched = await api.match_category(telegram_id, description, op_type)
@@ -312,7 +312,7 @@ async def _match_or_infer_category(telegram_id: int, description: str | None, op
 
 
 async def _create_from_natural(message: Message, state: FSMContext, text: str) -> bool:
-    """Выполняет действие «create from natural» в рамках логики Finance Helper."""
+    """Создаёт операцию из свободного текстового сообщения пользователя."""
     parsed = parse_natural_operation(text, today=date.today())
     if not parsed:
         return False
@@ -344,13 +344,13 @@ async def _create_from_natural(message: Message, state: FSMContext, text: str) -
 
 
 def month_range(y: int, m: int) -> tuple[date, date]:
-    """Выполняет действие «month range» в рамках логики Finance Helper."""
+    """Возвращает границы текущего или выбранного месяца."""
     last_day = calendar.monthrange(y, m)[1]
     return date(y, m, 1), date(y, m, last_day)
 
 
 async def build_month_stats_text(telegram_id: int, y: int, m: int) -> str:
-    """Собирает итоговую структуру или текст для сценария «month stats text»."""
+    """Собирает краткую статистику за месяц в текстовом виде."""
     d1, d2 = month_range(y, m)
     all_ops = []
     offset = 0

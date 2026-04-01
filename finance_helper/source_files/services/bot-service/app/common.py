@@ -1,16 +1,16 @@
-"""Модуль сервисного слоя Telegram-бота Finance Helper."""
+"""Небольшие форматирующие функции и текстовые подсказки Telegram-бота."""
 def ru_type(t: str) -> str:
-    """Выполняет действие «ru type» в рамках логики Finance Helper."""
+    """Преобразует технический тип операции в понятное русское название."""
     return "расход" if t == "expense" else "доход" if t == "income" else t
 
 
 def op_emoji(t: str) -> str:
-    """Выполняет действие «op emoji» в рамках логики Finance Helper."""
+    """Возвращает emoji для типа операции."""
     return "🔴" if t == "expense" else "🟢" if t == "income" else "⚪"
 
 
 def fmt_money(x) -> str:
-    """Выполняет действие «fmt money» в рамках логики Finance Helper."""
+    """Форматирует сумму в строку с двумя знаками после запятой."""
     try:
         return f"{float(x):.2f}"
     except Exception:
@@ -18,12 +18,12 @@ def fmt_money(x) -> str:
 
 
 def safe_date_str(op_date: str) -> str:
-    """Выполняет действие «safe date str» в рамках логики Finance Helper."""
+    """Безопасно обрезает строку даты до формата YYYY-MM-DD."""
     return (op_date or "")[:10]
 
 
 def quick_date_help() -> str:
-    """Выполняет действие «quick date help» в рамках логики Finance Helper."""
+    """Возвращает краткую подсказку по допустимым форматам даты."""
     return (
         "Укажи дату операции:\n"
         "• сегодня\n"

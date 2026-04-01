@@ -1,4 +1,4 @@
-"""Модуль сервисного слоя Telegram-бота Finance Helper."""
+"""Обработчики Telegram-бота для загрузки чеков и импорта банковских выписок."""
 from pathlib import Path
 
 from aiogram import F
@@ -17,7 +17,7 @@ from .navigation import try_interrupt_current_flow
 
 
 async def _download_telegram_file(message: Message, file_id: str, target_path: Path) -> None:
-    """Выполняет действие «download telegram file» в рамках логики Finance Helper."""
+    """Скачивает файл из Telegram во временное хранилище."""
     tg_file = await message.bot.get_file(file_id)
     target_path.parent.mkdir(parents=True, exist_ok=True)
     with target_path.open("wb") as output:
@@ -25,7 +25,7 @@ async def _download_telegram_file(message: Message, file_id: str, target_path: P
 
 
 async def _resolve_category_from_text(telegram_id: int, raw_text: str | None, op_type: str) -> str | None:
-    """Выполняет действие «resolve category from text» в рамках логики Finance Helper."""
+    """Пытается подобрать категорию по тексту импортируемой операции."""
     if not raw_text:
         return None
     try:
@@ -40,7 +40,7 @@ async def _resolve_category_from_text(telegram_id: int, raw_text: str | None, op
 
 @dp.message(F.text == "🏦 Импорт")
 async def menu_statement_import(message: Message, state: FSMContext):
-    """Выполняет действие «menu statement import» в рамках логики Finance Helper."""
+    """Открывает раздел импорта банковской выписки."""
     await state.set_state(StatementImportFlow.waiting_file)
     await message.answer(
         "Отправь банковскую выписку в CSV или XLSX.\nЯ разберу файл, покажу сколько операций нашла, и предложу импортировать их в бюджет.",
@@ -50,7 +50,7 @@ async def menu_statement_import(message: Message, state: FSMContext):
 
 @dp.message(StatementImportFlow.waiting_file, F.document)
 async def handle_statement_file(message: Message, state: FSMContext):
-    """Выполняет действие «handle statement file» в рамках логики Finance Helper."""
+    """Обрабатывает загруженный файл выписки и подготавливает предварительный импорт."""
     document = message.document
     if not document or not document.file_name:
         await message.answer("Пришли документ CSV или XLSX.", reply_markup=MENU_KB)
@@ -98,7 +98,7 @@ async def handle_statement_file(message: Message, state: FSMContext):
 
 @dp.message(StatementImportFlow.waiting_file)
 async def statement_waiting_text(message: Message, state: FSMContext):
-    """Обрабатывает текст во время ожидания файла выписки."""
+    """Обрабатывает ввод пользователя на шаге ожидания файла банковской выписки."""
     if await try_interrupt_current_flow(message, state):
         return
 
@@ -110,7 +110,7 @@ async def statement_waiting_text(message: Message, state: FSMContext):
 
 @dp.callback_query(F.data == "stmt:confirm")
 async def cb_statement_confirm(callback: CallbackQuery, state: FSMContext):
-    """Выполняет действие «cb statement confirm» в рамках логики Finance Helper."""
+    """Обрабатывает callback для подтверждения импорта выписки."""
     data = await state.get_data()
     payload = data.get("statement_payload") or {}
     rows = payload.get("rows") or []
@@ -162,7 +162,7 @@ async def cb_statement_confirm(callback: CallbackQuery, state: FSMContext):
 
 @dp.message(StatementImportFlow.confirm)
 async def statement_confirm_text(message: Message, state: FSMContext):
-    """Обрабатывает текст во время подтверждения импорта выписки."""
+    """Обрабатывает ввод пользователя на шаге подтверждения импорта банковской выписки."""
     if await try_interrupt_current_flow(message, state):
         return
 
@@ -174,7 +174,7 @@ async def statement_confirm_text(message: Message, state: FSMContext):
 
 @dp.callback_query(F.data == "stmt:cancel")
 async def cb_statement_cancel(callback: CallbackQuery, state: FSMContext):
-    """Выполняет действие «cb statement cancel» в рамках логики Finance Helper."""
+    """Обрабатывает callback для отмены импорта выписки."""
     data = await state.get_data()
     payload = data.get("statement_payload") or {}
     if payload.get("import_id"):

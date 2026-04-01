@@ -1,4 +1,4 @@
-"""Модуль автоматических тестов проекта Finance Helper."""
+"""Тесты проверки внутреннего API-ключа на защищённых эндпоинтах."""
 import httpx
 import pytest
 
@@ -6,7 +6,7 @@ BASE_URL = "http://localhost:8000"
 
 
 def test_protected_endpoint_without_api_key():
-    """Проверяет сценарий «protected endpoint without api key»."""
+    """Проверяет, что защищённый эндпоинт недоступен без API-ключа."""
     try:
         response = httpx.get(
             f"{BASE_URL}/operations",
@@ -20,7 +20,7 @@ def test_protected_endpoint_without_api_key():
 
 
 def test_protected_endpoint_with_wrong_api_key():
-    """Проверяет сценарий «protected endpoint with wrong api key»."""
+    """Проверяет, что защищённый эндпоинт недоступен с неверным API-ключом."""
     try:
         response = httpx.get(
             f"{BASE_URL}/operations",

@@ -1,4 +1,4 @@
-"""Модуль API-шлюза Finance Helper."""
+"""FastAPI-приложение API-шлюза, которое объединяет маршруты финансов, аналитики, экспорта и Mini App."""
 from fastapi import FastAPI
 
 from .routes.analytics import router as analytics_router
@@ -11,7 +11,7 @@ app = FastAPI(title="API Gateway", version="0.8-release-refactor")
 
 @app.get("/health")
 def health():
-    """Выполняет действие «health» в рамках логики Finance Helper."""
+    """Возвращает ответ для проверки, что API-шлюз работает."""
     return {"status": "ok"}
 
 

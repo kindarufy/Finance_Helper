@@ -1,4 +1,4 @@
-"""Модуль сервисного слоя Telegram-бота Finance Helper."""
+"""Обработчики Telegram-бота для совместных пространств, их участников и переключения между ними."""
 from datetime import date
 
 from aiogram import F
@@ -15,7 +15,7 @@ from .navigation import try_interrupt_current_flow
 
 @dp.message(F.text.in_({"👨‍👩‍👧‍👦 Совместные бюджеты", "👨‍👩‍👧‍👦 Общие бюджеты"}))
 async def btn_workspaces(message: Message, state: FSMContext):
-    """Обрабатывает пользовательский сценарий «workspaces»."""
+    """Запускает сценарий workspaces."""
     await state.clear()
     overview = await build_workspace_overview_text(message.from_user.id)
     await message.answer(overview, reply_markup=workspace_menu_kb())
@@ -23,7 +23,7 @@ async def btn_workspaces(message: Message, state: FSMContext):
 
 @dp.callback_query(F.data == "ws:menu")
 async def cb_ws_menu(callback: CallbackQuery, state: FSMContext):
-    """Выполняет действие «cb ws menu» в рамках логики Finance Helper."""
+    """Обрабатывает callback для открытия меню пространств."""
     await state.clear()
     overview = await build_workspace_overview_text(callback.from_user.id)
     await callback.message.edit_text(overview)
@@ -33,7 +33,7 @@ async def cb_ws_menu(callback: CallbackQuery, state: FSMContext):
 
 @dp.callback_query(F.data == "ws:list")
 async def cb_ws_list(callback: CallbackQuery):
-    """Выполняет действие «cb ws list» в рамках логики Finance Helper."""
+    """Обрабатывает callback для просмотра списка пространств."""
     items = await api.list_workspaces(callback.from_user.id)
     await callback.message.edit_text("Выбери активное пространство:")
     await callback.message.edit_reply_markup(reply_markup=workspace_switch_kb(items))
@@ -42,7 +42,7 @@ async def cb_ws_list(callback: CallbackQuery):
 
 @dp.callback_query(F.data.startswith("ws:switch:"))
 async def cb_ws_switch(callback: CallbackQuery):
-    """Выполняет действие «cb ws switch» в рамках логики Finance Helper."""
+    """Обрабатывает callback для переключения активного пространства."""
     workspace_id = int(callback.data.rsplit(":", 1)[1])
     item = await api.set_active_workspace(callback.from_user.id, workspace_id)
     await callback.message.answer(
@@ -54,7 +54,7 @@ async def cb_ws_switch(callback: CallbackQuery):
 
 @dp.callback_query(F.data.startswith("ws:create:"))
 async def cb_ws_create(callback: CallbackQuery, state: FSMContext):
-    """Выполняет действие «cb ws create» в рамках логики Finance Helper."""
+    """Обрабатывает callback для создания пространства."""
     workspace_type = callback.data.rsplit(":", 1)[1]
     await state.clear()
     await state.set_state(WorkspaceCreateFlow.name)
@@ -65,7 +65,7 @@ async def cb_ws_create(callback: CallbackQuery, state: FSMContext):
 
 @dp.message(WorkspaceCreateFlow.name)
 async def ws_create_name(message: Message, state: FSMContext):
-    """Выполняет действие «ws create name» в рамках логики Finance Helper."""
+    """Обрабатывает ввод пользователя на шаге ввода названия пространства."""
     if await try_interrupt_current_flow(message, state):
         return
     name = (message.text or "").strip()
@@ -79,7 +79,7 @@ async def ws_create_name(message: Message, state: FSMContext):
 
 @dp.message(WorkspaceCreateFlow.currency)
 async def ws_create_currency(message: Message, state: FSMContext):
-    """Выполняет действие «ws create currency» в рамках логики Finance Helper."""
+    """Обрабатывает ввод пользователя на шаге ввода валюты пространства."""
     if await try_interrupt_current_flow(message, state):
         return
     currency = (message.text or "").strip().upper()
@@ -108,7 +108,7 @@ async def ws_create_currency(message: Message, state: FSMContext):
 
 @dp.callback_query(F.data == "ws:members")
 async def cb_ws_members(callback: CallbackQuery):
-    """Выполняет действие «cb ws members» в рамках логики Finance Helper."""
+    """Обрабатывает callback для просмотра участников пространства."""
     active = await api.get_active_workspace(callback.from_user.id)
     items = await api.list_workspace_members(callback.from_user.id, int(active["id"]))
     lines = [f"👥 Участники пространства «{active['name']}»:"]
@@ -121,7 +121,7 @@ async def cb_ws_members(callback: CallbackQuery):
 
 @dp.callback_query(F.data == "ws:add_member")
 async def cb_ws_add_member(callback: CallbackQuery, state: FSMContext):
-    """Выполняет действие «cb ws add member» в рамках логики Finance Helper."""
+    """Обрабатывает callback для добавления участника в пространство."""
     active = await api.get_active_workspace(callback.from_user.id)
     if active.get("my_role") != "owner":
         await callback.answer("Добавлять участников может только владелец пространства.", show_alert=True)
@@ -137,7 +137,7 @@ async def cb_ws_add_member(callback: CallbackQuery, state: FSMContext):
 
 @dp.message(WorkspaceMemberFlow.telegram_id)
 async def ws_member_tg(message: Message, state: FSMContext):
-    """Выполняет действие «ws member tg» в рамках логики Finance Helper."""
+    """Обрабатывает ввод пользователя на шаге ввода username или Telegram ID участника."""
     if await try_interrupt_current_flow(message, state):
         return
     txt = (message.text or "").strip()
@@ -154,7 +154,7 @@ async def ws_member_tg(message: Message, state: FSMContext):
 
 @dp.callback_query(F.data.startswith("ws:role:"))
 async def cb_ws_member_role(callback: CallbackQuery, state: FSMContext):
-    """Выполняет действие «cb ws member role» в рамках логики Finance Helper."""
+    """Обрабатывает callback для выбора роли участника."""
     role = callback.data.rsplit(":", 1)[1]
     data = await state.get_data()
     try:
@@ -184,7 +184,7 @@ async def cb_ws_member_role(callback: CallbackQuery, state: FSMContext):
 
 @dp.callback_query(F.data == "ws:stats")
 async def cb_ws_stats(callback: CallbackQuery):
-    """Выполняет действие «cb ws stats» в рамках логики Finance Helper."""
+    """Обрабатывает callback для просмотра статистики пространства."""
     active = await api.get_active_workspace(callback.from_user.id)
     today = date.today()
     report_text = await build_monthly_report_text(callback.from_user.id, today.year, today.month)
@@ -195,7 +195,7 @@ async def cb_ws_stats(callback: CallbackQuery):
 
 @dp.callback_query(F.data == "ws:manage_members")
 async def cb_ws_manage_members(callback: CallbackQuery):
-    """Выполняет действие «cb ws manage members» в рамках логики Finance Helper."""
+    """Обрабатывает callback для управления участниками пространства."""
     active = await api.get_active_workspace(callback.from_user.id)
     if active.get("my_role") != "owner":
         await callback.answer("Управление участниками доступно только владельцу пространства.", show_alert=True)
@@ -208,7 +208,7 @@ async def cb_ws_manage_members(callback: CallbackQuery):
 
 @dp.callback_query(F.data.startswith("wsm:"))
 async def cb_ws_manage_member(callback: CallbackQuery):
-    """Выполняет действие «cb ws manage member» в рамках логики Finance Helper."""
+    """Обрабатывает callback для выбора участника для управления."""
     _, workspace_id, member_tg = callback.data.split(":")
     items = await api.list_workspace_members(callback.from_user.id, int(workspace_id))
     member = next((item for item in items if int(item["telegram_id"]) == int(member_tg)), None)
@@ -223,7 +223,7 @@ async def cb_ws_manage_member(callback: CallbackQuery):
 
 @dp.callback_query(F.data.startswith("wsmr:"))
 async def cb_ws_member_role_change(callback: CallbackQuery):
-    """Выполняет действие «cb ws member role change» в рамках логики Finance Helper."""
+    """Обрабатывает callback для изменения роли участника."""
     _, workspace_id, member_tg, role = callback.data.split(":")
     await api.update_workspace_member_role(callback.from_user.id, int(workspace_id), int(member_tg), role)
     await callback.message.answer(f"✅ Роль участника обновлена: {role}", reply_markup=MENU_KB)
@@ -232,7 +232,7 @@ async def cb_ws_member_role_change(callback: CallbackQuery):
 
 @dp.callback_query(F.data.startswith("wsmx:"))
 async def cb_ws_member_remove(callback: CallbackQuery):
-    """Выполняет действие «cb ws member remove» в рамках логики Finance Helper."""
+    """Обрабатывает callback для удаления участника из пространства."""
     _, workspace_id, member_tg = callback.data.split(":")
     await api.remove_workspace_member(callback.from_user.id, int(workspace_id), int(member_tg))
     await callback.message.answer("✅ Участник удалён из пространства.", reply_markup=MENU_KB)

@@ -1,9 +1,9 @@
-"""Модуль API-шлюза Finance Helper."""
+"""Настройки API-шлюза: адреса сервисов, внутренний ключ и секрет подписи Mini App."""
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
-    """Класс «Settings» описывает состояние или структуру данных данного модуля."""
+    """Настройки API-шлюза, которые считываются из переменных окружения."""
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     internal_api_key: str = Field(default="change_me", validation_alias="INTERNAL_API_KEY")

@@ -1,4 +1,4 @@
-"""Навигация и прерывание активных FSM-сценариев Telegram-бота."""
+"""Навигация и безопасное прерывание активных FSM-сценариев Telegram-бота."""
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
@@ -45,7 +45,7 @@ CANCEL_TEXTS = {
 
 
 async def try_interrupt_current_flow(message: Message, state: FSMContext) -> bool:
-    """Сбрасывает активный сценарий и перенаправляет пользователя по меню."""
+    """Прерывает текущий FSM-сценарий и переводит пользователя в выбранный раздел меню."""
     text = (message.text or "").strip()
     low = text.lower()
 

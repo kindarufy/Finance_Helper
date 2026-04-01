@@ -1,4 +1,4 @@
-"""Модуль автоматических тестов проекта Finance Helper."""
+"""Тесты для расчётов сервиса аналитики: сводка, месячный отчёт, анализ трат и данные дашборда."""
 # flake8: noqa: E402
 # pyright: reportMissingImports=false
 
@@ -12,7 +12,7 @@ from app.reports import dashboard_payload, monthly_report_payload, render_daily_
 
 
 def test_summary_report_calculates_totals_and_balance():
-    """Проверяет сценарий «summary report calculates totals and balance»."""
+    """Проверяет, что сводный отчёт правильно считает доходы, расходы и баланс."""
     operations = [
         {"type": "income", "amount": 1000, "category": "Зарплата"},
         {"type": "expense", "amount": 200, "category": "Еда"},
@@ -28,7 +28,7 @@ def test_summary_report_calculates_totals_and_balance():
 
 
 def test_summary_report_empty_operations():
-    """Проверяет сценарий «summary report empty operations»."""
+    """Проверяет сводный отчёт для пустого списка операций."""
     result = summary_report([])
 
     assert result["income_total"] == 0.0
@@ -38,7 +38,7 @@ def test_summary_report_empty_operations():
 
 
 def test_render_daily_text_contains_main_fields():
-    """Проверяет сценарий «render daily text contains main fields»."""
+    """Проверяет, что текст дневной сводки содержит ключевые поля."""
     report = {
         "income_total": 1000.0,
         "expense_total": 250.0,
@@ -57,7 +57,7 @@ def test_render_daily_text_contains_main_fields():
 
 
 def test_render_monthly_report_text_contains_key_sections():
-    """Проверяет сценарий «render monthly report text contains key sections»."""
+    """Проверяет, что текст ежемесячного отчёта содержит основные разделы."""
     current_ops = [
         {"type": "income", "amount": 1000, "category": "Зарплата", "user_telegram_id": 1, "occurred_at": "2026-03-01"},
         {"type": "expense", "amount": 300, "category": "Еда", "user_telegram_id": 1, "occurred_at": "2026-03-02"},
@@ -74,7 +74,7 @@ def test_render_monthly_report_text_contains_key_sections():
 
 
 def test_spending_analysis_mentions_growth_and_user():
-    """Проверяет сценарий «spending analysis mentions growth and user»."""
+    """Проверяет, что анализ трат упоминает рост расходов и вклад пользователя."""
     current_ops = [
         {"type": "expense", "amount": 900, "category": "Еда", "user_username": "nikol", "user_telegram_id": 1, "occurred_at": "2026-03-02"},
         {"type": "expense", "amount": 1200, "category": "Транспорт", "user_username": "roma", "user_telegram_id": 2, "occurred_at": "2026-03-03"},
@@ -90,7 +90,7 @@ def test_spending_analysis_mentions_growth_and_user():
 
 
 def test_dashboard_payload_builds_timeline_and_recent():
-    """Проверяет сценарий «dashboard payload builds timeline and recent»."""
+    """Проверяет сборку таймлайна и списка последних операций для дашборда."""
     ops = [
         {"id": 1, "type": "expense", "amount": 300, "category": "Еда", "occurred_at": "2026-03-29", "user_telegram_id": 1},
         {"id": 2, "type": "income", "amount": 1000, "category": "Зарплата", "occurred_at": "2026-03-30", "user_telegram_id": 1},
@@ -103,7 +103,7 @@ def test_dashboard_payload_builds_timeline_and_recent():
 
 
 def test_spending_analysis_detects_anomalies_and_recurring():
-    """Проверяет сценарий «spending analysis detects anomalies and recurring»."""
+    """Проверяет, что анализ трат находит аномальные и повторяющиеся расходы."""
     current_ops = [
         {"type": "expense", "amount": 3000, "category": "Подписки", "comment": "Spotify", "user_username": "nikol", "user_telegram_id": 1, "occurred_at": "2026-03-02"},
         {"type": "expense", "amount": 15000, "category": "Техника", "comment": "iPhone", "user_username": "nikol", "user_telegram_id": 1, "occurred_at": "2026-03-03"},

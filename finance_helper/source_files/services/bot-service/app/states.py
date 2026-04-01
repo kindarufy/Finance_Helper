@@ -1,76 +1,76 @@
-"""Модуль сервисного слоя Telegram-бота Finance Helper."""
+"""Наборы состояний FSM для пошаговых сценариев Telegram-бота."""
 from aiogram.fsm.state import State, StatesGroup
 
 
 class AddFlow(StatesGroup):
-    """Класс «AddFlow» описывает состояние или структуру данных данного модуля."""
+    """Состояния пошагового добавления операции."""
     amount = State()
     comment = State()
     date = State()
 
 
 class LimitFlow(StatesGroup):
-    """Класс «LimitFlow» описывает состояние или структуру данных данного модуля."""
+    """Состояние ввода дневного лимита."""
     value = State()
 
 
 class BudgetFlow(StatesGroup):
-    """Класс «BudgetFlow» описывает состояние или структуру данных данного модуля."""
+    """Состояние ввода суммы бюджетного лимита."""
     amount = State()
 
 
 class ReportScheduleFlow(StatesGroup):
-    """Класс «ReportScheduleFlow» описывает состояние или структуру данных данного модуля."""
+    """Состояния настройки дня и времени автоматического отчёта."""
     day = State()
     send_time = State()
 
 
 class WorkspaceCreateFlow(StatesGroup):
-    """Класс «WorkspaceCreateFlow» описывает состояние или структуру данных данного модуля."""
+    """Состояния создания нового пространства."""
     name = State()
     currency = State()
 
 
 class WorkspaceMemberFlow(StatesGroup):
-    """Класс «WorkspaceMemberFlow» описывает состояние или структуру данных данного модуля."""
+    """Состояние ввода идентификатора участника для приглашения."""
     telegram_id = State()
 
 
 class EditAnyFlow(StatesGroup):
-    """Класс «EditAnyFlow» описывает состояние или структуру данных данного модуля."""
+    """Состояния редактирования выбранной операции."""
     amount = State()
     comment = State()
     date = State()
 
 
 class NaturalFlow(StatesGroup):
-    """Класс «NaturalFlow» описывает состояние или структуру данных данного модуля."""
+    """Состояние подтверждения операции, распознанной из естественного текста."""
     confirm = State()
 
 
 class CategoryCreateFlow(StatesGroup):
-    """Класс «CategoryCreateFlow» описывает состояние или структуру данных данного модуля."""
+    """Состояния создания новой категории."""
     name = State()
     emoji = State()
 
 
 class CategoryAliasFlow(StatesGroup):
-    """Класс «CategoryAliasFlow» описывает состояние или структуру данных данного модуля."""
+    """Состояние добавления ключевого слова для категории."""
     alias = State()
 
 
 class CategoryRenameFlow(StatesGroup):
-    """Класс «CategoryRenameFlow» описывает состояние или структуру данных данного модуля."""
+    """Состояние ввода нового названия категории."""
     name = State()
 
 
 class CategoryEmojiFlow(StatesGroup):
-    """Класс «CategoryEmojiFlow» описывает состояние или структуру данных данного модуля."""
+    """Состояние ввода emoji для категории."""
     emoji = State()
 
 
 
 class StatementImportFlow(StatesGroup):
-    """Класс «StatementImportFlow» описывает состояние или структуру данных данного модуля."""
+    """Состояния загрузки и подтверждения банковской выписки."""
     waiting_file = State()
     confirm = State()

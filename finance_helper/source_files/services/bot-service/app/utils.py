@@ -1,4 +1,4 @@
-"""Модуль сервисного слоя Telegram-бота Finance Helper."""
+"""Утилиты Telegram-бота для разбора команд, естественного текста, чеков и банковских выписок."""
 from __future__ import annotations
 
 import csv
@@ -16,7 +16,7 @@ except Exception:  # pragma: no cover
 
 
 def parse_add_command(text: str):
-    """Разбирает входные данные для сценария «add command»."""
+    """Разбирает команду /add и извлекает тип операции, сумму, категорию и комментарий."""
     parts = text.split()
     if len(parts) < 4:
         return None
@@ -40,7 +40,7 @@ def parse_add_command(text: str):
 
 
 def parse_report(text: str):
-    """Разбирает входные данные для сценария «report»."""
+    """Разбирает команду /report и определяет границы запрошенного периода."""
     parts = text.split()
     if len(parts) != 3:
         return None
@@ -65,7 +65,7 @@ _DATE_EXACT_PATTERNS = [
 
 
 def parse_user_date(value: str, today: date | None = None) -> date | None:
-    """Разбирает входные данные для сценария «user date»."""
+    """Преобразует пользовательский ввод даты в объект date."""
     today = today or date.today()
     cleaned = " ".join((value or "").strip().split())
     if not cleaned:
@@ -104,7 +104,7 @@ def parse_user_date(value: str, today: date | None = None) -> date | None:
 
 
 def _extract_date_fragment(text: str, today: date) -> tuple[date | None, str]:
-    """Выполняет действие «extract date fragment» в рамках логики Finance Helper."""
+    """Ищет и вырезает фрагмент текста, похожий на дату."""
     cleaned = text.strip()
     for token, dt in {"сегодня": today, "вчера": today - timedelta(days=1), "позавчера": today - timedelta(days=2)}.items():
         if re.search(rf"(?:^|\s){token}(?:$|\s)", cleaned, flags=re.IGNORECASE):
@@ -147,7 +147,7 @@ _CURRENCY_RE = re.compile(r"^[A-Za-z]{3,5}$")
 
 
 def parse_natural_operation(text: str, today: date | None = None) -> dict[str, Any] | None:
-    """Разбирает входные данные для сценария «natural operation»."""
+    """Разбирает свободный текст и выделяет из него параметры финансовой операции."""
     if not text:
         return None
     source = " ".join(text.strip().split())
@@ -198,7 +198,7 @@ DEFAULT_CATEGORY_HINTS: dict[str, dict[str, set[str]]] = {
 
 
 def infer_default_category(description: str | None, op_type: str) -> str | None:
-    """Выполняет действие «infer default category» в рамках логики Finance Helper."""
+    """Пытается угадать категорию по ключевым словам в тексте."""
     if not description:
         return None
     normalized = f" {description.lower()} "
@@ -213,7 +213,7 @@ _CURRENCY_SYMBOLS = {"₽": "RUB", "$": "USD", "€": "EUR", "₸": "KZT", "£":
 
 
 def _detect_currency(text: str) -> str:
-    """Выполняет действие «detect currency» в рамках логики Finance Helper."""
+    """Определяет валюту по тексту сообщения."""
     upper = text.upper()
     for code in ["RUB", "USD", "EUR", "KZT", "GBP"]:
         if code in upper:
@@ -231,7 +231,7 @@ def _detect_currency(text: str) -> str:
 
 
 def _parse_any_date_fragment(value: str, today: date | None = None) -> date | None:
-    """Выполняет действие «parse any date fragment» в рамках логики Finance Helper."""
+    """Пытается разобрать дату из произвольного текстового фрагмента."""
     value = (value or "").strip()
     if not value:
         return None
@@ -251,12 +251,12 @@ def _parse_any_date_fragment(value: str, today: date | None = None) -> date | No
 
 
 def _receipt_candidate_lines(text: str) -> list[str]:
-    """Выполняет действие «receipt candidate lines» в рамках логики Finance Helper."""
+    """Очищает текст чека и выделяет строки, полезные для распознавания."""
     return [line.strip() for line in text.splitlines() if line and line.strip()]
 
 
 def _extract_receipt_items(text: str) -> list[dict[str, Any]]:
-    """Выполняет действие «extract receipt items» в рамках логики Finance Helper."""
+    """Извлекает позиции покупки и суммы из текста чека."""
     items: list[dict[str, Any]] = []
     for line in _receipt_candidate_lines(text):
         if len(items) >= 5:
@@ -279,7 +279,7 @@ def _extract_receipt_items(text: str) -> list[dict[str, Any]]:
 
 
 def _best_merchant_from_lines(lines: list[str], fallback: str | None = None) -> str | None:
-    """Выполняет действие «best merchant from lines» в рамках логики Finance Helper."""
+    """Пытается определить название магазина по строкам чека."""
     for line in lines[:8]:
         if len(line) < 3:
             continue
@@ -292,7 +292,7 @@ def _best_merchant_from_lines(lines: list[str], fallback: str | None = None) -> 
 
 
 def _preprocessed_ocr_text(image_path: str | Path) -> tuple[str, str | None]:
-    """Выполняет действие «preprocessed ocr text» в рамках логики Finance Helper."""
+    """Запускает OCR по нескольким вариантам предобработанного изображения чека."""
     try:
         from PIL import Image, ImageFilter, ImageOps  # type: ignore
         import pytesseract  # type: ignore
@@ -312,7 +312,7 @@ def _preprocessed_ocr_text(image_path: str | Path) -> tuple[str, str | None]:
 
 
 def extract_receipt_data(image_path: str | Path, hint_text: str | None = None) -> dict[str, Any]:
-    """Выполняет действие «extract receipt data» в рамках логики Finance Helper."""
+    """Извлекает сумму, дату, магазин и позиции из загруженного чека."""
     raw_text_parts: list[str] = []
     if hint_text:
         raw_text_parts.append(hint_text)
@@ -357,7 +357,7 @@ def extract_receipt_data(image_path: str | Path, hint_text: str | None = None) -
 
 
 def _coerce_amount(raw: Any) -> float | None:
-    """Выполняет действие «coerce amount» в рамках логики Finance Helper."""
+    """Преобразует строковое значение суммы в число."""
     if raw is None:
         return None
     value = str(raw).strip().replace(" ", "").replace(",", ".")
@@ -370,7 +370,7 @@ def _coerce_amount(raw: Any) -> float | None:
 
 
 def _statement_row_to_operation(row: dict[str, Any]) -> dict[str, Any] | None:
-    """Выполняет действие «statement row to operation» в рамках логики Finance Helper."""
+    """Преобразует строку банковской выписки в словарь операции."""
     dt = _parse_any_date_fragment(str(row.get("date") or row.get("дата") or row.get("operation_date") or row.get("transaction_date") or row.get("posted_at") or ""))
     amount = _coerce_amount(row.get("amount") or row.get("sum") or row.get("сумма"))
     debit = _coerce_amount(row.get("debit") or row.get("expense") or row.get("списание"))
@@ -411,7 +411,7 @@ def _statement_row_to_operation(row: dict[str, Any]) -> dict[str, Any] | None:
 
 
 def parse_statement_file(filename: str, content: bytes) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-    """Разбирает входные данные для сценария «statement file»."""
+    """Разбирает CSV- или XLSX-файл банковской выписки в список операций."""
     suffix = Path(filename or "statement").suffix.lower()
     rows: list[dict[str, Any]] = []
     if suffix == ".csv":

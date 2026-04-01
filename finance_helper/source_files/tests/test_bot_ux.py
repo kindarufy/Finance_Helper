@@ -1,4 +1,4 @@
-"""Модуль автоматических тестов проекта Finance Helper."""
+"""Тесты текстов интерфейса Telegram-бота."""
 # flake8: noqa: E402
 # pyright: reportMissingImports=false
 
@@ -12,7 +12,7 @@ from app import ux  # type: ignore[import-not-found]
 
 
 def test_welcome_text_contains_main_positioning():
-    """Проверяет сценарий «welcome text contains main positioning»."""
+    """Проверяет, что приветственный текст содержит основное позиционирование бота."""
     text = ux.welcome_text('Николь')
     assert 'Finance Helper' in text
     assert 'Telegram-бот' in text
@@ -20,7 +20,7 @@ def test_welcome_text_contains_main_positioning():
 
 
 def test_onboarding_mentions_key_flows():
-    """Проверяет сценарий «onboarding mentions key flows»."""
+    """Проверяет, что онбординг описывает ключевые сценарии работы."""
     text = ux.onboarding_text()
     assert 'Категории' in text
     assert 'Лимиты и бюджеты' in text
@@ -28,7 +28,7 @@ def test_onboarding_mentions_key_flows():
 
 
 def test_examples_text_contains_income_and_expense_examples():
-    """Проверяет сценарий «examples text contains income and expense examples»."""
+    """Проверяет, что блок примеров содержит примеры доходов и расходов."""
     text = ux.examples_text()
     assert '700 пицца' in text
     assert '+30000 зарплата' in text
@@ -36,7 +36,7 @@ def test_examples_text_contains_income_and_expense_examples():
 
 
 def test_help_text_lists_core_sections_and_commands():
-    """Проверяет сценарий «help text lists core sections and commands»."""
+    """Проверяет, что справка перечисляет основные разделы и команды."""
     text = ux.help_text()
     assert 'CSV/XLSX' in text
     assert 'совместные бюджеты' in text.lower()
@@ -45,13 +45,13 @@ def test_help_text_lists_core_sections_and_commands():
 
 
 def test_unknown_input_text_gives_generic_examples():
-    """Проверяет сценарий «unknown input text gives generic examples»."""
+    """Проверяет, что ответ на непонятный ввод предлагает общие примеры."""
     text = ux.unknown_input_text('абракадабра')
     assert '700 пицца' in text
     assert '❓ Помощь' in text
 
 
 def test_bot_commands_include_menu_and_examples():
-    """Проверяет сценарий «bot commands include menu and examples»."""
+    """Проверяет, что список команд содержит меню и примеры."""
     commands = {item['command'] for item in ux.BOT_COMMANDS}
     assert {'start', 'help', 'examples', 'add', 'report', 'daily', 'open'} <= commands

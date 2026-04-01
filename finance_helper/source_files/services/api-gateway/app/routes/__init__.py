@@ -1,1 +1,1 @@
-"""Модуль маршрутов API-шлюза Finance Helper."""
+"""Пакет маршрутов API-шлюза Finance Helper."""

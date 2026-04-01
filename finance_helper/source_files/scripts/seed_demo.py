@@ -1,4 +1,4 @@
-"""Служебный модуль сценариев и утилит проекта Finance Helper."""
+"""Скрипт для быстрого наполнения системы демонстрационными данными через API-шлюз."""
 from __future__ import annotations
 
 import json
@@ -16,7 +16,7 @@ USERNAME = os.getenv("DEMO_TELEGRAM_USERNAME", "demo_user")
 
 
 def request(method: str, path: str, payload: dict | None = None, params: dict | None = None):
-    """Выполняет действие «request» в рамках логики Finance Helper."""
+    """Выполняет HTTP-запрос к API-шлюзу и возвращает JSON-ответ."""
     url = f"{GATEWAY_URL}{path}"
     if params:
         url += "?" + urllib.parse.urlencode(params)
@@ -36,13 +36,13 @@ def request(method: str, path: str, payload: dict | None = None, params: dict | 
 
 
 def main() -> int:
-    """Запускает основной рабочий сценарий модуля."""
+    """Создаёт демо-пользователя, категории, операции и лимиты для быстрого запуска проекта."""
     print("[seed-demo] upserting demo user")
     request("POST", "/users/upsert", {"telegram_id": TELEGRAM_ID, "username": USERNAME})
     active = request("GET", "/workspaces/active", params={"telegram_id": TELEGRAM_ID})
     workspace_id = active["id"]
 
-    # Categories
+    # Создаём базовые категории для демо-пользователя
     for category in [
         {"name": "Еда", "type": "expense", "emoji": "🍔"},
         {"name": "Транспорт", "type": "expense", "emoji": "🚇"},
