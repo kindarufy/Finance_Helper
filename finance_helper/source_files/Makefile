@@ -1,26 +1,39 @@
-.PHONY: up down rebuild logs test seed-demo clean compile
+.PHONY: venv install migrate run-finance run-analytics run-gateway run-bot seed-demo test compile clean
 
-up:
-	docker compose up --build
+PYTHON ?= python3
+VENV ?= venv
+VENV_PYTHON ?= $(VENV)/bin/python
 
-down:
-	docker compose down
+venv:
+	$(PYTHON) -m venv $(VENV)
 
-rebuild:
-	docker compose down -v
-	docker compose up --build
+install: venv
+	$(VENV_PYTHON) -m pip install --upgrade pip
+	$(VENV_PYTHON) -m pip install -r requirements.txt
 
-logs:
-	docker compose logs -f
+migrate:
+	cd services/finance-service && ../../$(VENV_PYTHON) -m alembic upgrade head
 
-test:
-	python -m pytest -q
+run-finance:
+	cd services/finance-service && ../../$(VENV_PYTHON) -m uvicorn app.main:app --host 0.0.0.0 --port 8001
 
-compile:
-	python -m compileall services tests scripts
+run-analytics:
+	cd services/analytics-service && ../../$(VENV_PYTHON) -m uvicorn app.main:app --host 0.0.0.0 --port 8002
+
+run-gateway:
+	cd services/api-gateway && ../../$(VENV_PYTHON) -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+run-bot:
+	cd services/bot-service && ../../$(VENV_PYTHON) -m app.main
 
 seed-demo:
-	docker compose --profile demo run --rm demo-seed
+	$(VENV_PYTHON) scripts/seed_demo.py
+
+test:
+	PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 $(VENV_PYTHON) -m pytest -q
+
+compile:
+	$(PYTHON) -m compileall services tests scripts
 
 clean:
 	rm -rf .pytest_cache htmlcov .coverage

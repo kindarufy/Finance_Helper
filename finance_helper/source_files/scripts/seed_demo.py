@@ -9,7 +9,7 @@ import urllib.parse
 import urllib.request
 from datetime import date, timedelta
 
-GATEWAY_URL = os.getenv("GATEWAY_URL", "http://api-gateway:8000").rstrip("/")
+GATEWAY_URL = os.getenv("GATEWAY_URL", "http://127.0.0.1:8000").rstrip("/")
 API_KEY = os.getenv("INTERNAL_API_KEY", "change_me")
 TELEGRAM_ID = int(os.getenv("DEMO_TELEGRAM_ID", "123456789"))
 USERNAME = os.getenv("DEMO_TELEGRAM_USERNAME", "demo_user")

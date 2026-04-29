@@ -1,0 +1,30 @@
+# Переменные окружения и секретные данные
+.env
+.env.*
+!.env.example
+
+# Кэш Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Виртуальные окружения
+venv/
+.venv/
+
+# Файлы IDE и операционной системы
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Данные, создаваемые во время работы приложения
+/data/
+finance_helper_uploads/
+*.sqlite3
+*.db
+
+# Логи
+*.log

@@ -1,8 +1,10 @@
 """Тесты проверки внутреннего API-ключа на защищённых эндпоинтах."""
+import os
+
 import httpx
 import pytest
 
-BASE_URL = "http://localhost:8000"
+BASE_URL = os.getenv("TEST_GATEWAY_URL", "http://127.0.0.1:8000").rstrip("/")
 
 
 def test_protected_endpoint_without_api_key():
