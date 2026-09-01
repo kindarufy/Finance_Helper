@@ -54,11 +54,14 @@ Telegram Bot                 Mini App
              /         \
             ▼           ▼
    Finance Service   Analytics Service
-            │           │
-            └─────┬─────┘
-                  ▼
-             PostgreSQL
+          ▲   │             │
+          │   │             │ HTTP
+          │   ▼             │
+          │ PostgreSQL      │
+          └─────────────────┘
 ```
+
+`finance-service` является источником финансовых данных и работает с PostgreSQL. `analytics-service` запрашивает операции и лимиты у `finance-service` по внутреннему HTTP API, а не обращается к его базе напрямую.
 
 ### `finance-service`
 
@@ -76,11 +79,12 @@ Telegram Bot                 Mini App
 
 Сервис аналитики и отчётности:
 
-- дневные сводки;
-- отчёты за период;
-- анализ расходов;
-- экспорт CSV/XLSX;
-- данные для Mini App.
+- запрашивает финансовые данные у `finance-service`;
+- формирует дневные сводки;
+- строит отчёты за период;
+- анализирует расходы;
+- формирует экспорт CSV/XLSX;
+- отдаёт данные для Mini App.
 
 ### `api-gateway`
 
