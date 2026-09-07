@@ -42,6 +42,48 @@
 
 ---
 
+---
+
+## Интерфейс
+
+### Быстрое добавление операций
+
+Finance Helper понимает операции, введённые обычным сообщением, включая сумму, категорию и относительную дату.
+
+![Finance Helper — быстрое добавление операции](docs/assets/finance-helper-bot-quick-entry.png)
+
+### Пошаговое добавление расхода
+
+Операцию также можно добавить через интерактивный сценарий с выбором категории, комментарием и датой.
+
+![Finance Helper — добавление расхода](docs/assets/finance-helper-bot-expense-flow.png)
+
+### Финансовые отчёты
+
+Бот формирует месячные отчёты с расходами, доходами, балансом и распределением по категориям.
+
+![Finance Helper — финансовый отчёт](docs/assets/finance-helper-bot-monthly-report.png)
+
+### Mini App
+
+Mini App предоставляет расширенный дашборд с балансом, расходами, доходами, прогнозом и распределением расходов по категориям.
+
+![Finance Helper Mini App — dashboard](docs/assets/finance-helper-miniapp-dashboard.png)
+
+### AI-анализ расходов
+
+Аналитический модуль выделяет основные изменения, крупнейшие категории и операции и формирует рекомендации на основе финансовых данных.
+
+![Finance Helper Mini App — AI-анализ](docs/assets/finance-helper-miniapp-ai-analysis.png)
+
+### История операций
+
+В Mini App доступна история доходов и расходов с категориями, датами, участниками и комментариями.
+
+![Finance Helper Mini App — операции](docs/assets/finance-helper-miniapp-operations.png)
+
+---
+
 ## Архитектура
 
 ```text
