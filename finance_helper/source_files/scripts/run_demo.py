@@ -19,13 +19,12 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def check_ports(ports: list[int]) -> None:
-    """Fail before starting or migrating if a demo port is occupied."""
+    """Fail before starting or migrating if a service is listening."""
     for port in ports:
         with socket.socket() as sock:
-            try:
-                sock.bind(("127.0.0.1", port))
-            except OSError as exc:
-                raise RuntimeError(f"Port {port} is busy; choose another --port.") from exc
+            sock.settimeout(0.2)
+            if sock.connect_ex(("127.0.0.1", port)) == 0:
+                raise RuntimeError(f"Port {port} is busy; choose another --port.")
 
 
 def wait_ready(process: subprocess.Popen, url: str) -> None:
