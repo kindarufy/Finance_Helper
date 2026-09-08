@@ -61,18 +61,22 @@ def main() -> int:
         {"type": "expense", "amount": 1490, "currency": "RUB", "category": "Подписки", "comment": "music streaming", "occurred_at": (today - timedelta(days=2)).isoformat()},
         {"type": "expense", "amount": 780, "currency": "RUB", "category": "Транспорт", "comment": "такси", "occurred_at": (today - timedelta(days=1)).isoformat()},
     ]
-    for op in operations:
+    existing = request("GET", "/operations", params={
+        "telegram_id": TELEGRAM_ID, "workspace_id": workspace_id, "limit": 1,
+    })
+    for op in ([] if existing["items"] else operations):
         request("POST", "/operations", {"telegram_id": TELEGRAM_ID, "workspace_id": workspace_id, **op})
 
     print("[seed-demo] setting budget limits")
     request("POST", "/users/setlimit", {"telegram_id": TELEGRAM_ID, "daily_limit": 3000})
     request(
         "POST",
-        "/budgets/limits",
+        "/limits",
         {
             "telegram_id": TELEGRAM_ID,
             "workspace_id": workspace_id,
             "period": "monthly",
+            "scope": "workspace",
             "amount": 60000,
             "currency": "RUB",
         },
