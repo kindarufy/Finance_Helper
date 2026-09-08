@@ -194,6 +194,11 @@ finance_helper/source_files
 
 ## Настройка окружения
 
+Все пути `cd finance_helper/source_files/...` ниже указаны **от корня репозитория**.
+Каждый раздел начинайте из корня; сервисы запускайте в отдельных терминалах
+с активированным окружением. Для локальной демонстрации достаточно раздела
+«Локальная демонстрация одной командой» после установки и подготовки БД.
+
 Перейдите в рабочую директорию и создайте `.env` из безопасного шаблона:
 
 ```bash
@@ -341,6 +346,13 @@ cd finance_helper/source_files
 PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest -q
 ```
 
+PowerShell:
+
+```powershell
+$env:PYTEST_DISABLE_PLUGIN_AUTOLOAD='1'
+python -m pytest -q
+```
+
 Часть smoke-тестов проверяет работающий `api-gateway`. Если gateway не запущен, соответствующие integration checks могут быть пропущены.
 
 Ручные сценарии находятся в:
@@ -352,6 +364,10 @@ finance_helper/source_files/docs/test_scenarios.md
 ---
 
 ## Документация
+
+Актуальный локальный запуск: [`docs/local-run.md`](docs/local-run.md).
+PDF описывает серверный вариант; дополнения для localhost находятся в этом
+руководстве и README.
 
 - `README.md` — обзор проекта и быстрый запуск;
 - `finance_helper/run_and_configuration_guide/Finance_Helper_Guide.pdf` — подробное руководство по конфигурации;
